@@ -1,88 +1,88 @@
-# Unity Project Template Package
+# Unity プロジェクトテンプレートパッケージ
 
 [![Unity Version](https://img.shields.io/badge/Unity-2022.3+-green.svg)](https://unity3d.com/get-unity/download)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A comprehensive Unity project template package featuring URP 2D, R3 reactive extensions, Input System, and organized project structure for rapid game development.
+URP 2D、R3 リアクティブ拡張、Input System、整理されたプロジェクト構造を含む、高速ゲーム開発のための包括的なUnityプロジェクトテンプレートパッケージです。
 
-## ✨ Features
+## ✨ 機能
 
-- 🎨 **URP 2D Pipeline** - Optimized Universal Render Pipeline for 2D games
-- 🎮 **Input System** - Modern input handling with pre-configured actions
-- ⚡ **R3 Reactive Extensions** - Reactive programming for Unity
-- 📝 **TextMesh Pro** - Enhanced text rendering
-- 🗂️ **Organized Structure** - Clean folder organization for sprites, audio, scripts
-- 🛠️ **Editor Tools** - Custom menu items and utilities
-- 📋 **Scene Templates** - Pre-configured 2D URP scene templates
+- 🎨 **URP 2D パイプライン** - 2Dゲーム用に最適化されたUniversal Render Pipeline
+- 🎮 **Input System** - 事前設定されたアクションを持つモダンな入力処理
+- ⚡ **R3 リアクティブ拡張** - Unity用リアクティブプログラミング
+- 📝 **TextMesh Pro** - 強化されたテキストレンダリング
+- 🗂️ **整理された構造** - スプライト、オーディオ、スクリプト用のクリーンなフォルダ構成
+- 🛠️ **エディタツール** - カスタムメニュー項目とユーティリティ
+- 📋 **シーンテンプレート** - 事前設定済みの2D URPシーンテンプレート
 
-## 📦 Installation
+## 📦 インストール
 
-### Via Unity Package Manager (Git URL)
+### Unity Package Manager経由（Git URL）
 
-1. Open Unity and go to **Window > Package Manager**
-2. Click the **+** button in the top-left corner
-3. Select **Add package from git URL...**
-4. Enter the following URL:
+1. Unityを開き、**Window > Package Manager**に移動
+2. 左上の**「+」ボタン**をクリック
+3. **「Add package from git URL...」**を選択
+4. 以下のURLを入力:
    ```
-   https://github.com/your-username/my-unity-template.git
+   https://github.com/void2610/my-unity-template.git
    ```
-5. Click **Add**
+5. **「Add」**をクリック
 
-### Via Package Manager (Local)
+### Package Manager経由（ローカル）
 
-1. Clone or download this repository
-2. Open Unity and go to **Window > Package Manager**
-3. Click the **+** button and select **Add package from disk...**
-4. Navigate to the downloaded folder and select `package.json`
+1. このリポジトリをクローンまたはダウンロード
+2. Unityを開き、**Window > Package Manager**に移動
+3. **「+」ボタン**をクリックし、**「Add package from disk...」**を選択
+4. ダウンロードしたフォルダに移動し、`package.json`を選択
 
-## 🚀 Quick Start
+## 🚀 クイックスタート
 
-### 1. Use Template Tools
+### 1. テンプレートツールの使用
 
-Access the template tools via **Tools > Unity Template** menu:
+**Tools > Unity Template**メニューからテンプレートツールにアクセス:
 
-- **Create New 2D URP Scene** - Creates a new scene with URP 2D setup
-- **Setup Project Settings** - Configures optimal settings for 2D development
-- **Create Folder Structure** - Creates organized folder hierarchy
-- **Create Example Scripts** - Generates GameManager and InputHandler examples
-- **Open Documentation** - Opens this documentation
+- **Create New 2D URP Scene** - 2D URP設定で新しいシーンを作成
+- **Setup Project Settings** - 2D開発用の最適な設定を構成
+- **Create Folder Structure** - 整理されたフォルダ階層を作成
+- **Create Example Scripts** - GameManagerとInputHandlerの例を生成
+- **Open Documentation** - このドキュメントを開く
 
-### 2. Start Developing
+### 2. 開発開始
 
-The template tools generate example scripts demonstrating:
+テンプレートツールは以下の実例スクリプトを生成します:
 
-- `GameManager.cs` - R3 reactive programming patterns
-- `InputHandler.cs` - Input System integration with R3
-- 2D URP scene creation
-- Organized folder structure for assets
+- `GameManager.cs` - R3リアクティブプログラミングパターン
+- `InputHandler.cs` - Input SystemとR3の統合
+- 2D URPシーンの作成
+- アセット用の整理されたフォルダ構造
 
-## 📁 Package Structure
+## 📁 パッケージ構造
 
 ```
-├── package.json                    # Package manifest
-├── README.md                      # This file
-├── LICENSE                        # MIT License
-├── Runtime/                       # Runtime scripts and assets
+├── package.json                    # パッケージマニフェスト
+├── README.md                      # このファイル
+├── LICENSE                        # MITライセンス
+├── Runtime/                       # ランタイムスクリプトとアセット
 │   └── com.void2610.unity-template.Runtime.asmdef
-├── Editor/                        # Editor scripts and tools
-│   ├── TemplateMenuItems.cs      # Custom menu items
+├── Editor/                        # エディタスクリプトとツール
+│   ├── TemplateMenuItems.cs      # カスタムメニュー項目
 │   └── com.void2610.unity-template.Editor.asmdef
-└── Tests/                         # Test scripts
+└── Tests/                         # テストスクリプト
     └── com.void2610.unity-template.Tests.asmdef
 ```
 
-## 🛠️ Dependencies
+## 🛠️ 依存関係
 
-This package automatically includes:
+このパッケージは以下を自動的に含みます:
 
 - **Universal Render Pipeline** (com.unity.render-pipelines.universal)
 - **TextMesh Pro** (com.unity.textmeshpro)
 - **Input System** (com.unity.inputsystem)
-- **R3** (via NuGet)
+- **R3** (NuGet経由)
 
-## 📖 Usage Examples
+## 📖 使用例
 
-### Reactive Game Manager
+### リアクティブゲームマネージャー
 
 ```csharp
 using R3;
@@ -96,16 +96,16 @@ public class Example : MonoBehaviour
     {
         gameManager = FindObjectOfType<GameManager>();
         
-        // React to score changes
+        // スコア変更に反応
         gameManager.Score.Subscribe(score => 
         {
-            Debug.Log($"Score: {score}");
+            Debug.Log($"スコア: {score}");
         }).AddTo(this);
     }
 }
 ```
 
-### Input Handling
+### 入力処理
 
 ```csharp
 using R3;
@@ -119,7 +119,7 @@ public class PlayerController : MonoBehaviour
     {
         inputHandler = FindObjectOfType<InputHandler>();
         
-        // React to movement input
+        // 移動入力に反応
         inputHandler.MoveInput.Subscribe(movement => 
         {
             transform.Translate(movement * Time.deltaTime);
@@ -128,20 +128,29 @@ public class PlayerController : MonoBehaviour
 }
 ```
 
-## 🤝 Contributing
+## 🚀 ワークフロー例
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+1. **パッケージをインストール**
+2. **Tools > Unity Template > Create Folder Structure** でフォルダ構造を作成
+3. **Tools > Unity Template > Create Example Scripts** でサンプルスクリプトを生成
+4. **Tools > Unity Template > Create New 2D URP Scene** で新しいシーンを作成
+5. **Tools > Unity Template > Setup Project Settings** でプロジェクト設定を最適化
+6. 開発開始！
 
-## 📄 License
+## 🤝 コントリビューション
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+コントリビューションを歓迎します！プルリクエストをお気軽に送信してください。
 
-## 🔗 Links
+## 📄 ライセンス
 
-- [Unity Package Manager Documentation](https://docs.unity3d.com/Manual/upm-ui.html)
-- [R3 Reactive Extensions](https://github.com/Cysharp/R3)
+このプロジェクトはMITライセンスの下でライセンスされています - 詳細は[LICENSE](LICENSE)ファイルを参照してください。
+
+## 🔗 リンク
+
+- [Unity Package Manager ドキュメント](https://docs.unity3d.com/Manual/upm-ui.html)
+- [R3 リアクティブ拡張](https://github.com/Cysharp/R3)
 - [Universal Render Pipeline](https://docs.unity3d.com/Packages/com.unity.render-pipelines.universal@latest)
 
 ---
 
-Made with ❤️ for the Unity community
+❤️ Unityコミュニティのために作成
