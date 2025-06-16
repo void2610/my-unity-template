@@ -6,155 +6,75 @@ namespace Void2610.UnityTemplate
 {
     /// <summary>
     /// 拡張Buttonコンポーネント
-    /// interactableとは別に独自の利用可否状態を管理
-    /// より柔軟なボタン制御が可能
+    /// interactableがfalseの状態でもナビゲーション選択を可能にする
     /// </summary>
     public class MyButton : Button
     {
-        [Header("拡張設定")]
-        [SerializeField] private bool _isAvailable = true;
-        
-        private bool _forceDisabledVisual = false;
-
         /// <summary>
-        /// 独自の使用可否（interactableとは別に制御）
-        /// この値がfalseの場合、見た目は無効だがクリックイベントは完全にブロック
+        /// 選択時の処理（ナビゲーションで選択された時）
+        /// interactableがfalseでも選択を許可
         /// </summary>
-        public bool IsAvailable
+        public override void OnSelect(BaseEventData eventData)
         {
-            get => _isAvailable;
-            set
+            // interactableの値に関係なく選択を許可
+            if (eventData.selectedObject == gameObject)
             {
-                if (_isAvailable == value) return;
-                _isAvailable = value;
-                UpdateVisualState();
+                base.OnSelect(eventData);
             }
         }
 
         /// <summary>
-        /// ボタンが実際にクリック可能かどうか
-        /// interactable と IsAvailable の両方がtrueの場合のみtrue
+        /// ナビゲーション移動時の処理
+        /// interactableがfalseでも移動を許可
         /// </summary>
-        public bool IsClickable => interactable && IsAvailable;
-
-        protected override void Awake()
+        public override void OnMove(AxisEventData eventData)
         {
-            base.Awake();
-            UpdateVisualState();
+            // interactableの値に関係なく移動を許可
+            base.OnMove(eventData);
         }
 
         /// <summary>
         /// キーボード/コントローラーでの決定入力処理
+        /// interactableがtrueの場合のみ実行
         /// </summary>
         public override void OnSubmit(BaseEventData eventData)
         {
-            if (!IsAvailable) return;
+            if (!interactable) return;
             base.OnSubmit(eventData);
         }
 
         /// <summary>
         /// マウスクリック処理
+        /// interactableがtrueの場合のみ実行
         /// </summary>
         public override void OnPointerClick(PointerEventData eventData)
         {
-            if (!IsAvailable) return;
+            if (!interactable) return;
             base.OnPointerClick(eventData);
         }
 
         /// <summary>
-        /// 選択時の処理（ナビゲーションで選択された時）
+        /// マウスホバー時の処理
+        /// interactableがfalseでも選択状態に変更
         /// </summary>
-        public override void OnSelect(BaseEventData eventData)
+        public override void OnPointerEnter(PointerEventData eventData)
         {
-            if (!IsAvailable) return;
-            base.OnSelect(eventData);
-        }
-
-        /// <summary>
-        /// 見た目の状態を更新
-        /// </summary>
-        private void UpdateVisualState()
-        {
-            _forceDisabledVisual = !IsAvailable;
+            base.OnPointerEnter(eventData);
             
-            // IsAvailableがfalseの場合は強制的にDisabled状態で表示
-            if (_forceDisabledVisual)
+            // interactableがfalseでもホバー時に選択状態にする
+            if (!interactable && IsInteractable())
             {
-                DoStateTransition(SelectionState.Disabled, false);
-            }
-            else
-            {
-                // 通常の状態遷移
-                DoStateTransition(currentSelectionState, false);
+                Select();
             }
         }
 
         /// <summary>
-        /// 状態遷移をオーバーライド
+        /// ボタンが選択可能かどうかを判定
+        /// （Selectableクラスの内部メソッドの代替）
         /// </summary>
-        protected override void DoStateTransition(SelectionState state, bool instant)
+        protected virtual bool IsInteractable()
         {
-            // IsAvailableがfalseの場合は常にDisabled状態で表示
-            if (_forceDisabledVisual)
-            {
-                base.DoStateTransition(SelectionState.Disabled, instant);
-                return;
-            }
-
-            base.DoStateTransition(state, instant);
+            return gameObject.activeInHierarchy;
         }
-
-        /// <summary>
-        /// ボタンを一時的に無効化（アニメーション付き）
-        /// </summary>
-        public void SetAvailableWithAnimation(bool available, float duration = 0.3f)
-        {
-            if (IsAvailable == available) return;
-
-            IsAvailable = available;
-            
-            // 簡単なスケールアニメーション
-            if (available)
-            {
-                transform.localScale = Vector3.one * 0.8f;
-                LeanTween.scale(gameObject, Vector3.one, duration).setEaseOutBack();
-            }
-            else
-            {
-                LeanTween.scale(gameObject, Vector3.one * 0.9f, duration).setEaseInQuart();
-            }
-        }
-
-        /// <summary>
-        /// ボタンの状態をリセット
-        /// </summary>
-        public void ResetState()
-        {
-            IsAvailable = true;
-            interactable = true;
-            transform.localScale = Vector3.one;
-        }
-
-        /// <summary>
-        /// デバッグ情報を表示
-        /// </summary>
-        public void DebugState()
-        {
-            Debug.Log($"MyButton状態 - IsAvailable: {IsAvailable}, Interactable: {interactable}, IsClickable: {IsClickable}");
-        }
-
-#if UNITY_EDITOR
-        /// <summary>
-        /// エディタでの値変更を監視
-        /// </summary>
-        protected override void OnValidate()
-        {
-            base.OnValidate();
-            if (Application.isPlaying)
-            {
-                UpdateVisualState();
-            }
-        }
-#endif
     }
 }

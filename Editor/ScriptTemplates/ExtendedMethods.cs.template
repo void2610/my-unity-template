@@ -127,11 +127,11 @@ namespace Void2610.UnityTemplate
 
             if (Application.isPlaying)
             {
-                Object.Destroy(gameObject);
+                UnityEngine.Object.Destroy(gameObject);
             }
             else
             {
-                Object.DestroyImmediate(gameObject);
+                UnityEngine.Object.DestroyImmediate(gameObject);
             }
         }
 
