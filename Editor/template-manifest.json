@@ -7,6 +7,7 @@
   ],
   "gitPackages": [
     "https://github.com/GlitchEnzo/NuGetForUnity.git?path=/src/NuGetForUnity",
+    "https://github.com/Cysharp/R3.git?path=src/R3.Unity/Assets/R3.Unity",
     "https://github.com/Cysharp/UniTask.git?path=src/UniTask/Assets/Plugins/UniTask",
     "https://github.com/mob-sakai/UIEffect.git?path=Packages/src",
     "https://github.com/mob-sakai/UnmaskForUGUI.git",
