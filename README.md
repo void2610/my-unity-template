@@ -37,31 +37,23 @@ A comprehensive Unity project template package featuring URP 2D, R3 reactive ext
 
 ## 🚀 Quick Start
 
-### 1. Import Project Template
-
-After installing the package:
-
-1. Go to **Window > Package Manager**
-2. Find "void2610's Unity Project Template" in the list
-3. Expand **Samples** section
-4. Click **Import** next to "Project Template Files"
-
-### 2. Use Template Tools
+### 1. Use Template Tools
 
 Access the template tools via **Tools > Unity Template** menu:
 
-- **Create New Scene from Template** - Creates a new scene with URP 2D setup
+- **Create New 2D URP Scene** - Creates a new scene with URP 2D setup
 - **Setup Project Settings** - Configures optimal settings for 2D development
 - **Create Folder Structure** - Creates organized folder hierarchy
+- **Create Example Scripts** - Generates GameManager and InputHandler examples
 - **Open Documentation** - Opens this documentation
 
-### 3. Start Developing
+### 2. Start Developing
 
-The template provides example scripts demonstrating:
+The template tools generate example scripts demonstrating:
 
 - `GameManager.cs` - R3 reactive programming patterns
 - `InputHandler.cs` - Input System integration with R3
-- Scene templates for quick scene creation
+- 2D URP scene creation
 - Organized folder structure for assets
 
 ## 📁 Package Structure
@@ -75,14 +67,8 @@ The template provides example scripts demonstrating:
 ├── Editor/                        # Editor scripts and tools
 │   ├── TemplateMenuItems.cs      # Custom menu items
 │   └── com.void2610.unity-template.Editor.asmdef
-├── Tests/                         # Test scripts
-│   └── com.void2610.unity-template.Tests.asmdef
-└── Samples~/
-    └── ProjectTemplate/           # Complete project template
-        ├── Scripts/               # Example scripts
-        ├── Scenes/               # Template scenes
-        ├── Settings/             # Project settings
-        └── ...                   # Other template assets
+└── Tests/                         # Test scripts
+    └── com.void2610.unity-template.Tests.asmdef
 ```
 
 ## 🛠️ Dependencies

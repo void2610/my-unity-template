@@ -22,12 +22,5 @@
     "com.unity.render-pipelines.universal": "14.0.0",
     "com.unity.textmeshpro": "3.0.6",
     "com.unity.inputsystem": "1.5.0"
-  },
-  "samples": [
-    {
-      "displayName": "Project Template Files",
-      "description": "Complete project template with scenes, settings, and scripts",
-      "path": "Samples~/ProjectTemplate"
-    }
-  ]
+  }
 }
