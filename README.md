@@ -4,220 +4,76 @@
 [![Unity 6 Compatible](https://img.shields.io/badge/Unity_6-Compatible-blue.svg)](https://unity.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-URP、R3 リアクティブ拡張、Input System、整理されたプロジェクト構造を含む、高速ゲーム開発のためのUnityプロジェクトテンプレートパッケージです。
+Unity開発を効率化するための包括的なテンプレートパッケージです。
 
-## ✨ 機能
+## ✨ 何ができるか
 
-- 🎨 **Universal Render Pipeline** - 最適化されたレンダリングパイプライン
-- 🎮 **Input System** - モダンな入力処理システム
-- ⚡ **R3 リアクティブ拡張** - Unity用リアクティブプログラミング（自動インストール）
-- 🔧 **NuGetForUnity** - .NETパッケージ管理（自動インストール）
-- 📄 **LicenseMaster統合** - ライブラリライセンス管理（手動インストール）
-- 🗂️ **整理された構造** - スプライト、オーディオ、スクリプト用のクリーンなフォルダ構成
-- 🛠️ **自動セットアップ** - 依存関係の自動インストールとプロジェクト構築
-- 🚀 **Unity 6対応** - Unity 2022.3以降、Unity 6にも対応
+- **ワンクリック環境構築**: 必要なライブラリとフォルダ構造を自動セットアップ
+- **13個の実用Utilsスクリプト**: シングルトン、拡張メソッド、UI管理、アニメーション等
+- **ライセンス管理**: ライブラリのライセンス情報を自動管理
+- **レスポンシブ対応**: 異なる画面サイズでの一貫した表示
 
 ## 📦 インストール
 
-### Unity Package Manager経由（Git URL）
-
-1. Unityを開き、**Window > Package Manager**に移動
-2. 左上の**「+」ボタン**をクリック
-3. **「Add package from git URL...」**を選択
-4. 以下のURLを入力:
+1. Unity Package Managerを開く
+2. **「+ > Add package from git URL」**を選択
+3. 以下のURLを入力:
    ```
    https://github.com/void2610/my-unity-template.git
    ```
-5. **「Add」**をクリック
 
-### Package Manager経由（ローカル）
+## 🚀 使い方
 
-1. このリポジトリをクローンまたはダウンロード
-2. Unityを開き、**Window > Package Manager**に移動
-3. **「+」ボタン**をクリックし、**「Add package from disk...」**を選択
-4. ダウンロードしたフォルダに移動し、`package.json`を選択
+### 1. 依存関係をインストール
+**Tools > Unity Template > Install Dependencies**
 
-## 🚀 クイックスタート
+以下が自動インストールされます：
+- URP、Input System等のUnity標準パッケージ
+- R3、UniTask、VContainer等の人気ライブラリ
+- NuGetForUnity
 
-### 1. 依存関係の自動インストール
+### 2. プロジェクト構造を作成
+**Tools > Unity Template > Create Folder Structure**
 
-**Tools > Unity Template > Install Dependencies** を実行:
+### 3. Utilsスクリプトをコピー
+**Tools > Unity Template > Copy Utility Scripts**
 
-- Unity パッケージ（URP、Input System等）を自動インストール
-- NuGetForUnity を自動インストール
-- R3 Unity モジュールを自動インストール
-- Unity 6では互換性のないパッケージは自動的にスキップ
+以下の13個の便利スクリプトが利用可能になります：
 
-### 2. プロジェクト構造の作成
+#### コア機能
+- **SingletonMonoBehaviour** - シングルトンパターン
+- **SerializableDictionary** - Inspector編集可能な辞書
+- **ExtendedMethods** - 便利な拡張メソッド集
 
-**Tools > Unity Template > Create Folder Structure** を実行:
+#### UI機能
+- **MyButton** - 拡張ボタンコンポーネント
+- **TMPInputFieldCaretFixer** - TextMeshProの入力フィールド修正
+- **ButtonSe** - ボタン効果音
+- **CanvasAspectRatioFitter** - レスポンシブUI
 
-- 整理されたフォルダ階層を自動作成
+#### 表示・アニメーション
+- **CameraAspectRatioHandler** - 固定アスペクト比
+- **FloatMove** - 浮遊アニメーション
+- **SpriteSheetAnimator** - 2Dフレームアニメーション
 
-### 3. ユーティリティスクリプトのコピー
+#### デバッグ・管理
+- **DebugLogDisplay** - 画面上ログ表示
+- **GameManager** - ゲーム管理（R3使用）
+- **InputHandler** - 入力管理（R3使用）
 
-**Tools > Unity Template > Copy Utility Scripts** を実行:
+### 4. R3をインストール
+**Window > NuGetForUnity**で「R3」を検索してインストール
 
-- GameManagerとInputHandlerの例をコピー
+### 5. ライセンス管理（オプション）
+1. [LicenseMaster](https://github.com/syskentokyo/unitylicensemaster/releases)をダウンロード・インポート
+2. **Tools > Unity Template > Copy License Files**でライセンス管理開始
 
-### 4. R3の最終セットアップ
+## 🎯 対象
 
-1. **Window > NuGetForUnity** を開く
-2. 「R3」を検索してインストール
-3. Unityを再起動
-
-### 5. LicenseMasterの手動インストール（オプション）
-
-1. [LicenseMaster Releases](https://github.com/syskentokyo/unitylicensemaster/releases)からUnityPackageをダウンロード
-2. Unityプロジェクトにインポート
-3. **Tools > Unity Template > Copy License Files** を実行してライセンス管理開始
-
-### 6. 開発開始！
-
-生成されるサンプルスクリプト:
-- `GameManager.cs` - R3リアクティブプログラミングパターン
-- `InputHandler.cs` - Input SystemとR3の統合
-
-## 📁 パッケージ構造
-
-```
-├── package.json                    # パッケージマニフェスト
-├── README.md                      # このファイル
-├── LICENSE                        # MITライセンス
-├── Runtime/                       # ランタイムスクリプトとアセット
-│   └── com.void2610.unity-template.Runtime.asmdef
-├── Editor/                        # エディタスクリプトとツール
-│   ├── TemplateMenuItems.cs      # カスタムメニュー項目
-│   └── com.void2610.unity-template.Editor.asmdef
-└── Tests/                         # テストスクリプト
-    └── com.void2610.unity-template.Tests.asmdef
-```
-
-## 🛠️ 自動インストールされる依存関係
-
-### Unity公式パッケージ
-- **Universal Render Pipeline** - レンダリングパイプライン
-- **Input System** - 入力処理システム
-- **Addressables** - アセット管理システム
-- **Visual Effect Graph** - ビジュアルエフェクト
-- **Localization** - 多言語対応
-
-### 外部パッケージ（自動インストール）
-- **NuGetForUnity** - .NETパッケージマネージャー
-- **R3 Unity** - リアクティブプログラミングライブラリ
-- **UniTask** - 非同期処理ライブラリ
-- **VContainer** - DIコンテナ
-- **LitMotion** - 高速Tweenライブラリ
-- **UIEffect** - UI特殊効果
-- **UnmaskForUGUI** - UIマスキング
-- **Unityroom Client** - Unityroom連携
-
-### 手動インストール
-- **LicenseMaster** - ライブラリライセンス管理ツール
-
-### Unity 6での互換性
-- TextMeshPro、UGUIなど組み込みパッケージは自動的にスキップ
-- 互換性のないパッケージも自動スキップして継続
-
-## 📖 使用例
-
-### リアクティブゲームマネージャー
-
-```csharp
-using R3;
-using UnityEngine;
-
-public class Example : MonoBehaviour
-{
-    private GameManager gameManager;
-    
-    void Start()
-    {
-        gameManager = FindObjectOfType<GameManager>();
-        
-        // スコア変更に反応
-        gameManager.Score.Subscribe(score => 
-        {
-            Debug.Log($"スコア: {score}");
-        }).AddTo(this);
-    }
-}
-```
-
-### 入力処理
-
-```csharp
-using R3;
-using UnityEngine;
-
-public class PlayerController : MonoBehaviour
-{
-    private InputHandler inputHandler;
-    
-    void Start()
-    {
-        inputHandler = FindObjectOfType<InputHandler>();
-        
-        // 移動入力に反応
-        inputHandler.MoveInput.Subscribe(movement => 
-        {
-            transform.Translate(movement * Time.deltaTime);
-        }).AddTo(this);
-    }
-}
-```
-
-## 🚀 ワークフロー例
-
-1. **パッケージをインストール** (Unity Package Manager経由)
-2. **Tools > Unity Template > Install Dependencies** で依存関係を自動インストール
-3. **Tools > Unity Template > Create Folder Structure** でプロジェクト構造を作成
-4. **Tools > Unity Template > Copy Utility Scripts** でサンプルスクリプトをコピー
-5. **Window > NuGetForUnity** でR3をインストール
-6. **LicenseMasterを手動インストール** (オプション)
-7. **Tools > Unity Template > Copy License Files** でライセンス管理開始 (オプション)
-8. **開発開始！**
-
-## 🔧 トラブルシューティング
-
-### インストール中にエラーが発生した場合
-- パッケージインストール中にエラーが発生しても、他のパッケージのインストールは継続されます
-- Unity 6で互換性のないパッケージは自動的にスキップされます
-- ドメインリロード後も自動的にインストールが再開されます
-
-### キャンセルしたい場合
-- インストール中に再度 **Install Dependencies** を実行するとキャンセルオプションが表示されます
-
-## ⚙️ カスタマイズ
-
-### 依存関係のカスタマイズ
-
-テンプレートの依存関係をカスタマイズする場合：
-
-1. `Editor/template-manifest.json`を編集
-2. `packages`配列でUnityパッケージを指定
-3. `gitPackages`配列でGitパッケージを指定
-4. 変更をコミット・プッシュ
-
-### サポートされるUnityバージョン
-- Unity 2022.3以降
-- Unity 6に完全対応
-- 互換性のないパッケージは自動的にスキップ
-
-## 🤝 コントリビューション
-
-コントリビューションを歓迎します！プルリクエストをお気軽に送信してください。
+- Unity 2022.3以降（Unity 6対応）
+- 効率的な開発環境を求める開発者
+- 品質の高いUtilsスクリプトが欲しいチーム
 
 ## 📄 ライセンス
 
-このプロジェクトはMITライセンスの下でライセンスされています - 詳細は[LICENSE](LICENSE)ファイルを参照してください。
-
-## 🔗 リンク
-
-- [Unity Package Manager ドキュメント](https://docs.unity3d.com/Manual/upm-ui.html)
-- [R3 リアクティブ拡張](https://github.com/Cysharp/R3)
-- [Universal Render Pipeline](https://docs.unity3d.com/Packages/com.unity.render-pipelines.universal@latest)
-
----
-
-❤️ Unityコミュニティのために作成
+MIT License
