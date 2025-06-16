@@ -1,0 +1,160 @@
+using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.EventSystems;
+
+namespace Void2610.UnityTemplate
+{
+    /// <summary>
+    /// 拡張Buttonコンポーネント
+    /// interactableとは別に独自の利用可否状態を管理
+    /// より柔軟なボタン制御が可能
+    /// </summary>
+    public class MyButton : Button
+    {
+        [Header("拡張設定")]
+        [SerializeField] private bool _isAvailable = true;
+        
+        private bool _forceDisabledVisual = false;
+
+        /// <summary>
+        /// 独自の使用可否（interactableとは別に制御）
+        /// この値がfalseの場合、見た目は無効だがクリックイベントは完全にブロック
+        /// </summary>
+        public bool IsAvailable
+        {
+            get => _isAvailable;
+            set
+            {
+                if (_isAvailable == value) return;
+                _isAvailable = value;
+                UpdateVisualState();
+            }
+        }
+
+        /// <summary>
+        /// ボタンが実際にクリック可能かどうか
+        /// interactable と IsAvailable の両方がtrueの場合のみtrue
+        /// </summary>
+        public bool IsClickable => interactable && IsAvailable;
+
+        protected override void Awake()
+        {
+            base.Awake();
+            UpdateVisualState();
+        }
+
+        /// <summary>
+        /// キーボード/コントローラーでの決定入力処理
+        /// </summary>
+        public override void OnSubmit(BaseEventData eventData)
+        {
+            if (!IsAvailable) return;
+            base.OnSubmit(eventData);
+        }
+
+        /// <summary>
+        /// マウスクリック処理
+        /// </summary>
+        public override void OnPointerClick(PointerEventData eventData)
+        {
+            if (!IsAvailable) return;
+            base.OnPointerClick(eventData);
+        }
+
+        /// <summary>
+        /// 選択時の処理（ナビゲーションで選択された時）
+        /// </summary>
+        public override void OnSelect(BaseEventData eventData)
+        {
+            if (!IsAvailable) return;
+            base.OnSelect(eventData);
+        }
+
+        /// <summary>
+        /// 見た目の状態を更新
+        /// </summary>
+        private void UpdateVisualState()
+        {
+            _forceDisabledVisual = !IsAvailable;
+            
+            // IsAvailableがfalseの場合は強制的にDisabled状態で表示
+            if (_forceDisabledVisual)
+            {
+                DoStateTransition(SelectionState.Disabled, false);
+            }
+            else
+            {
+                // 通常の状態遷移
+                DoStateTransition(currentSelectionState, false);
+            }
+        }
+
+        /// <summary>
+        /// 状態遷移をオーバーライド
+        /// </summary>
+        protected override void DoStateTransition(SelectionState state, bool instant)
+        {
+            // IsAvailableがfalseの場合は常にDisabled状態で表示
+            if (_forceDisabledVisual)
+            {
+                base.DoStateTransition(SelectionState.Disabled, instant);
+                return;
+            }
+
+            base.DoStateTransition(state, instant);
+        }
+
+        /// <summary>
+        /// ボタンを一時的に無効化（アニメーション付き）
+        /// </summary>
+        public void SetAvailableWithAnimation(bool available, float duration = 0.3f)
+        {
+            if (IsAvailable == available) return;
+
+            IsAvailable = available;
+            
+            // 簡単なスケールアニメーション
+            if (available)
+            {
+                transform.localScale = Vector3.one * 0.8f;
+                LeanTween.scale(gameObject, Vector3.one, duration).setEaseOutBack();
+            }
+            else
+            {
+                LeanTween.scale(gameObject, Vector3.one * 0.9f, duration).setEaseInQuart();
+            }
+        }
+
+        /// <summary>
+        /// ボタンの状態をリセット
+        /// </summary>
+        public void ResetState()
+        {
+            IsAvailable = true;
+            interactable = true;
+            transform.localScale = Vector3.one;
+        }
+
+        /// <summary>
+        /// デバッグ情報を表示
+        /// </summary>
+        public void DebugState()
+        {
+            Debug.Log($"MyButton状態 - IsAvailable: {IsAvailable}, Interactable: {interactable}, IsClickable: {IsClickable}");
+        }
+
+#if UNITY_EDITOR
+        /// <summary>
+        /// エディタでの値変更を監視
+        /// </summary>
+        protected override void OnValidate()
+        {
+            base.OnValidate();
+            if (Application.isPlaying)
+            {
+                UpdateVisualState();
+            }
+        }
+#endif
+    }
+}

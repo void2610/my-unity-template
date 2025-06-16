@@ -259,7 +259,11 @@ namespace Void2610.UnityTemplate.Editor
                 ("ExtendedMethods.cs", "ExtendedMethods.cs.template"),
                 ("DebugLogDisplay.cs", "DebugLogDisplay.cs.template"),
                 ("CanvasAspectRatioFitter.cs", "CanvasAspectRatioFitter.cs.template"),
-                ("FloatMove.cs", "FloatMove.cs.template")
+                ("FloatMove.cs", "FloatMove.cs.template"),
+                ("MyButton.cs", "MyButton.cs.template"),
+                ("TMPInputFieldCaretFixer.cs", "TMPInputFieldCaretFixer.cs.template"),
+                ("ButtonSe.cs", "ButtonSe.cs.template"),
+                ("SpriteSheetAnimator.cs", "SpriteSheetAnimator.cs.template")
             };
             int copiedCount = 0;
             
