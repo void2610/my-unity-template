@@ -1,18 +1,18 @@
 {
   "packages": [
-    "com.unity.addressables",
-    "com.unity.localization",
     "com.unity.render-pipelines.universal",
     "com.unity.textmeshpro",
-    "com.unity.visualeffectgraph",
     "com.unity.ide.rider",
     "com.unity.inputsystem",
-    "com.unity.2d.sprite",
-    "com.unity.2d.tilemap"
   ],
   "gitPackages": [
     "https://github.com/GlitchEnzo/NuGetForUnity.git?path=/src/NuGetForUnity",
-    "https://github.com/Cysharp/R3.git?path=src/R3.Unity/Assets/R3.Unity"
+    "https://github.com/Cysharp/R3.git?path=src/R3.Unity/Assets/R3.Unity",
+    "https://github.com/Cysharp/UniTask.git?path=src/UniTask/Assets/Plugins/UniTask",
+    "https://github.com/mob-sakai/UIEffect.git?path=Packages/src",
+    "https://github.com/mob-sakai/UnmaskForUGUI.git",
+    "https://github.com/naichilab/unityroom-client-library.git?path=Assets/unityroom",
+    "https://github.com/hadashiA/VContainer.git?path=VContainer/Assets/VContainer"
   ],
   "testables": [
     "com.unity.inputsystem",
