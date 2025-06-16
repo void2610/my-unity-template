@@ -1,7 +1,10 @@
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.SceneManagement;
+using UnityEditor.PackageManager;
+using UnityEditor.PackageManager.Requests;
 using System.IO;
+using System.Collections;
 
 namespace Void2610.UnityTemplate.Editor
 {
@@ -11,6 +14,10 @@ namespace Void2610.UnityTemplate.Editor
     public static class TemplateMenuItems
     {
         private const string MENU_ROOT = "Tools/Unity Template/";
+        
+        private static AddRequest currentAddRequest;
+        private static System.Collections.Generic.Queue<string> packageQueue = new();
+        private static bool isInstallingPackages = false;
         
         [MenuItem(MENU_ROOT + "Create New 2D URP Scene")]
         public static void CreateNewURPScene()
@@ -67,6 +74,29 @@ namespace Void2610.UnityTemplate.Editor
                 "・GPU Skinning有効\n" +
                 "・V-Sync有効\n" +
                 "・アンチエイリアシング設定", "OK");
+        }
+        
+        [MenuItem(MENU_ROOT + "Install Dependencies")]
+        public static void InstallDependencies()
+        {
+            if (isInstallingPackages)
+            {
+                EditorUtility.DisplayDialog("インストール中", 
+                    "依存関係のインストールが進行中です。\n完了までお待ちください。", "OK");
+                return;
+            }
+
+            bool proceed = EditorUtility.DisplayDialog("依存関係のインストール", 
+                "以下のパッケージをインストールします:\n\n" +
+                "• R3 (Unity用リアクティブ拡張)\n" +
+                "• NuGetForUnity (NuGetパッケージ管理)\n" +
+                "• 必要なUnityパッケージ\n\n" +
+                "この処理には時間がかかる場合があります。\n続行しますか？", 
+                "インストール", "キャンセル");
+
+            if (!proceed) return;
+
+            StartDependencyInstallation();
         }
         
         [MenuItem(MENU_ROOT + "Open Documentation")]
@@ -382,6 +412,115 @@ namespace Void2610.UnityTemplate
 }";
             
             File.WriteAllText(Path.Combine(path, "InputHandler.cs"), inputHandlerContent);
+        }
+        
+        private static void StartDependencyInstallation()
+        {
+            isInstallingPackages = true;
+            
+            // パッケージのインストール順序（重要：NuGetForUnityを最初にインストール）
+            var packagesToInstall = new[]
+            {
+                "https://github.com/GlitchEnzo/NuGetForUnity.git?path=/src/NuGetForUnity",
+                "https://github.com/Cysharp/R3.git?path=src/R3.Unity/Assets/R3.Unity"
+            };
+            
+            packageQueue.Clear();
+            foreach (var package in packagesToInstall)
+            {
+                packageQueue.Enqueue(package);
+            }
+            
+            Debug.Log("依存関係のインストールを開始します...");
+            EditorUtility.DisplayProgressBar("依存関係インストール", "インストール開始...", 0f);
+            
+            InstallNextPackage();
+        }
+        
+        private static void InstallNextPackage()
+        {
+            if (packageQueue.Count == 0)
+            {
+                // 全てのパッケージインストール完了
+                EditorUtility.ClearProgressBar();
+                isInstallingPackages = false;
+                
+                Debug.Log("依存関係のインストールが完了しました");
+                EditorUtility.DisplayDialog("インストール完了", 
+                    "依存関係のインストールが完了しました。\n\n" +
+                    "次の手順:\n" +
+                    "1. NuGetForUnityが追加されました\n" +
+                    "2. Window > NuGetForUnity を開いてください\n" +
+                    "3. 'R3' を検索してインストールしてください\n" +
+                    "4. その後、テンプレートツールが使用可能になります", "OK");
+                
+                ShowPostInstallInstructions();
+                return;
+            }
+            
+            var packageUrl = packageQueue.Dequeue();
+            var packageName = GetPackageNameFromUrl(packageUrl);
+            var progress = 1f - (packageQueue.Count + 1) / 2f;
+            
+            EditorUtility.DisplayProgressBar("依存関係インストール", 
+                $"インストール中: {packageName}", progress);
+            
+            Debug.Log($"パッケージをインストール中: {packageName}");
+            currentAddRequest = Client.Add(packageUrl);
+            EditorApplication.update += PackageInstallProgress;
+        }
+        
+        private static void PackageInstallProgress()
+        {
+            if (currentAddRequest.IsCompleted)
+            {
+                EditorApplication.update -= PackageInstallProgress;
+                
+                if (currentAddRequest.Status == StatusCode.Success)
+                {
+                    Debug.Log($"パッケージインストール成功: {currentAddRequest.Result.displayName}");
+                    
+                    // 少し待ってから次のパッケージをインストール
+                    EditorApplication.delayCall += () => {
+                        System.Threading.Thread.Sleep(1000); // 1秒待機
+                        InstallNextPackage();
+                    };
+                }
+                else
+                {
+                    EditorUtility.ClearProgressBar();
+                    isInstallingPackages = false;
+                    
+                    Debug.LogError($"パッケージインストールエラー: {currentAddRequest.Error.message}");
+                    EditorUtility.DisplayDialog("インストールエラー", 
+                        $"パッケージのインストールに失敗しました:\n{currentAddRequest.Error.message}\n\n" +
+                        "手動でインストールしてください。", "OK");
+                }
+                
+                currentAddRequest = null;
+            }
+        }
+        
+        private static string GetPackageNameFromUrl(string url)
+        {
+            if (url.Contains("NuGetForUnity"))
+                return "NuGetForUnity";
+            if (url.Contains("R3"))
+                return "R3 Unity";
+            return "Unknown Package";
+        }
+        
+        private static void ShowPostInstallInstructions()
+        {
+            var message = "=== R3使用のための追加手順 ===\n\n" +
+                         "1. Window > NuGetForUnity を開く\n" +
+                         "2. 検索ボックスに 'R3' と入力\n" +
+                         "3. 'R3' パッケージを見つけてインストール\n" +
+                         "4. 'Microsoft.Bcl.AsyncInterfaces' もインストール\n" +
+                         "5. インストール完了後、Unityを再起動\n\n" +
+                         "これで Templates ツールが正常に動作します！";
+                         
+            Debug.Log(message);
         }
     }
 }
