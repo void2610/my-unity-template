@@ -5,9 +5,18 @@ using UnityEditor.PackageManager.Requests;
 using System.IO;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace Void2610.UnityTemplate.Editor
 {
+    [System.Serializable]
+    public class TemplateManifestData
+    {
+        public string[] packages = new string[0];
+        public string[] gitPackages = new string[0];
+        public string[] testables = new string[0];
+    }
+
     [System.Serializable]
     public class ManifestData
     {
@@ -60,7 +69,7 @@ namespace Void2610.UnityTemplate.Editor
 
             bool proceed = EditorUtility.DisplayDialog("依存関係のインストール", 
                 $"以下の{packagesToInstall.Count}個のパッケージをインストールします:\n\n" +
-                string.Join("\n", packagesToInstall.Take(5).Select(p => $"• {GetPackageDisplayName(p.Key)}")) +
+                string.Join("\n", packagesToInstall.Take(5).Select(p => $"• {GetPackageDisplayName(p)}")) +
                 (packagesToInstall.Count > 5 ? $"\n...他{packagesToInstall.Count - 5}個" : "") +
                 "\n\nこの処理には時間がかかる場合があります。\n続行しますか？", 
                 "インストール", "キャンセル");
@@ -241,7 +250,7 @@ namespace Void2610.UnityTemplate.Editor
         }
         
         
-        private static ManifestData LoadTemplateManifest()
+        private static TemplateManifestData LoadTemplateManifest()
         {
             var templateAsset = Resources.Load<TextAsset>("template-manifest");
             if (templateAsset == null)
@@ -252,7 +261,7 @@ namespace Void2610.UnityTemplate.Editor
 
             try
             {
-                return JsonUtility.FromJson<ManifestData>(templateAsset.text);
+                return JsonUtility.FromJson<TemplateManifestData>(templateAsset.text);
             }
             catch (System.Exception e)
             {
@@ -281,20 +290,55 @@ namespace Void2610.UnityTemplate.Editor
             }
         }
 
-        private static Dictionary<string, string> GetPackagesToInstall(ManifestData templateManifest, ManifestData currentManifest)
+        private static List<string> GetPackagesToInstall(TemplateManifestData templateManifest, ManifestData currentManifest)
         {
-            var packagesToInstall = new Dictionary<string, string>();
+            var packagesToInstall = new List<string>();
 
-            foreach (var package in templateManifest.dependencies)
+            // 通常のUnityパッケージ（バージョン不指定）
+            foreach (var packageId in templateManifest.packages)
             {
-                // 既にインストール済みかチェック
-                if (!currentManifest.dependencies.ContainsKey(package.Key))
+                if (!currentManifest.dependencies.ContainsKey(packageId))
                 {
-                    packagesToInstall.Add(package.Key, package.Value);
+                    packagesToInstall.Add(packageId);
+                }
+            }
+
+            // Gitパッケージ
+            foreach (var gitPackage in templateManifest.gitPackages)
+            {
+                // Git URLは完全マッチでなくても、同じリポジトリがあればスキップ
+                var isAlreadyInstalled = currentManifest.dependencies.Keys.Any(key => 
+                    key.Contains("github.com") && IsFromSameGitRepo(key, gitPackage));
+                
+                if (!isAlreadyInstalled)
+                {
+                    packagesToInstall.Add(gitPackage);
                 }
             }
 
             return packagesToInstall;
+        }
+
+        private static bool IsFromSameGitRepo(string installedUrl, string targetUrl)
+        {
+            try
+            {
+                // GitHubリポジトリ名を抽出して比較
+                var installedRepo = ExtractGitHubRepo(installedUrl);
+                var targetRepo = ExtractGitHubRepo(targetUrl);
+                return installedRepo == targetRepo;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private static string ExtractGitHubRepo(string gitUrl)
+        {
+            // "https://github.com/owner/repo.git" から "owner/repo" を抽出
+            var match = Regex.Match(gitUrl, @"github\.com/([^/]+/[^/\?\.]+)");
+            return match.Success ? match.Groups[1].Value : gitUrl;
         }
 
         private static string GetPackageDisplayName(string packageId)
@@ -310,24 +354,24 @@ namespace Void2610.UnityTemplate.Editor
             return packageId.Replace("com.unity.", "").Replace("com.", "");
         }
 
-        private static void StartDependencyInstallation(Dictionary<string, string> packagesToInstall)
+        private static void StartDependencyInstallation(List<string> packagesToInstall)
         {
             isInstallingPackages = true;
             
             packageQueue.Clear();
             
             // NuGetForUnityを最初にインストール（重要）
-            var nugetPackage = packagesToInstall.FirstOrDefault(p => p.Key.Contains("NuGetForUnity"));
-            if (!nugetPackage.Equals(default(KeyValuePair<string, string>)))
+            var nugetPackage = packagesToInstall.FirstOrDefault(p => p.Contains("NuGetForUnity"));
+            if (!string.IsNullOrEmpty(nugetPackage))
             {
-                packageQueue.Enqueue(nugetPackage.Key);
-                packagesToInstall.Remove(nugetPackage.Key);
+                packageQueue.Enqueue(nugetPackage);
+                packagesToInstall.Remove(nugetPackage);
             }
             
             // 残りのパッケージをキューに追加
             foreach (var package in packagesToInstall)
             {
-                packageQueue.Enqueue(package.Key);
+                packageQueue.Enqueue(package);
             }
             
             Debug.Log($"依存関係のインストールを開始します... ({packageQueue.Count}個のパッケージ)");
