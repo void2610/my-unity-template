@@ -1,0 +1,33 @@
+{
+  "name": "com.shuya.unity-template",
+  "version": "1.0.0",
+  "displayName": "Shuya's Unity Project Template",
+  "description": "A comprehensive Unity project template featuring URP 2D, TextMesh Pro, R3 reactive extensions, Input System, and essential project structure for rapid game development.",
+  "unity": "2022.3",
+  "author": {
+    "name": "Shuya",
+    "url": "https://github.com/your-username"
+  },
+  "keywords": [
+    "template",
+    "urp",
+    "2d",
+    "reactive",
+    "r3",
+    "textmeshpro",
+    "inputsystem"
+  ],
+  "category": "Templates",
+  "dependencies": {
+    "com.unity.render-pipelines.universal": "14.0.0",
+    "com.unity.textmeshpro": "3.0.6",
+    "com.unity.inputsystem": "1.5.0"
+  },
+  "samples": [
+    {
+      "displayName": "Project Template Files",
+      "description": "Complete project template with scenes, settings, and scripts",
+      "path": "Samples~/ProjectTemplate"
+    }
+  ]
+}
