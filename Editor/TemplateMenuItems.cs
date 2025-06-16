@@ -1,10 +1,8 @@
 using UnityEngine;
 using UnityEditor;
-using UnityEditor.SceneManagement;
 using UnityEditor.PackageManager;
 using UnityEditor.PackageManager.Requests;
 using System.IO;
-using System.Collections;
 
 namespace Void2610.UnityTemplate.Editor
 {
@@ -19,62 +17,6 @@ namespace Void2610.UnityTemplate.Editor
         private static System.Collections.Generic.Queue<string> packageQueue = new();
         private static bool isInstallingPackages = false;
         
-        [MenuItem(MENU_ROOT + "Create New 2D URP Scene")]
-        public static void CreateNewURPScene()
-        {
-            // Ensure Scenes folder exists
-            CreateFolderRecursively("Assets/Scenes");
-            
-            var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-            
-            // Add basic 2D URP components
-            var mainCamera = new GameObject("Main Camera");
-            var camera = mainCamera.AddComponent<Camera>();
-            camera.clearFlags = CameraClearFlags.SolidColor;
-            camera.backgroundColor = Color.black;
-            camera.orthographic = true;
-            camera.orthographicSize = 5;
-            
-            mainCamera.AddComponent<AudioListener>();
-            mainCamera.tag = "MainCamera";
-            
-            // Save the scene
-            var scenePath = EditorUtility.SaveFilePanel("新しい2D URPシーンを保存", "Assets/Scenes", "NewScene", "unity");
-            if (!string.IsNullOrEmpty(scenePath))
-            {
-                scenePath = FileUtil.GetProjectRelativePath(scenePath);
-                EditorSceneManager.SaveScene(scene, scenePath);
-                AssetDatabase.Refresh();
-                Debug.Log($"新しい2D URPシーンを作成しました: {scenePath}");
-                EditorUtility.DisplayDialog("シーン作成完了", 
-                    $"新しい2D URPシーンを作成しました:\n{scenePath}", "OK");
-            }
-        }
-        
-        [MenuItem(MENU_ROOT + "Setup Project Settings")]
-        public static void SetupProjectSettings()
-        {
-            // Configure common project settings
-            PlayerSettings.colorSpace = ColorSpace.Linear;
-            PlayerSettings.gpuSkinning = true;
-            
-            // Configure graphics settings for 2D
-            PlayerSettings.defaultScreenWidth = 1920;
-            PlayerSettings.defaultScreenHeight = 1080;
-            PlayerSettings.runInBackground = true;
-            
-            // Configure quality settings
-            QualitySettings.vSyncCount = 1;
-            QualitySettings.antiAliasing = 2;
-            
-            Debug.Log("2D開発用にプロジェクト設定を最適化しました");
-            EditorUtility.DisplayDialog("プロジェクト設定完了", 
-                "2D開発とURPに最適なプロジェクト設定を適用しました。\n\n" +
-                "・Linear色空間\n" +
-                "・GPU Skinning有効\n" +
-                "・V-Sync有効\n" +
-                "・アンチエイリアシング設定", "OK");
-        }
         
         [MenuItem(MENU_ROOT + "Install Dependencies")]
         public static void InstallDependencies()
@@ -99,11 +41,6 @@ namespace Void2610.UnityTemplate.Editor
             StartDependencyInstallation();
         }
         
-        [MenuItem(MENU_ROOT + "Open Documentation")]
-        public static void OpenDocumentation()
-        {
-            Application.OpenURL("https://github.com/void2610/my-unity-template");
-        }
         
         [MenuItem(MENU_ROOT + "Create Folder Structure")]
         public static void CreateFolderStructure()

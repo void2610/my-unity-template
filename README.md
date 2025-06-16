@@ -42,11 +42,8 @@ URP 2D、R3 リアクティブ拡張、Input System、整理されたプロジ�
 **Tools > Unity Template**メニューからテンプレートツールにアクセス:
 
 - **Install Dependencies** - R3とNuGetForUnityを自動インストール
-- **Create New 2D URP Scene** - 2D URP設定で新しいシーンを作成
-- **Setup Project Settings** - 2D開発用の最適な設定を構成
 - **Create Folder Structure** - 整理されたフォルダ階層を作成
 - **Create Example Scripts** - GameManagerとInputHandlerの例を生成
-- **Open Documentation** - このドキュメントを開く
 
 ### 2. 開発開始
 
@@ -136,9 +133,7 @@ public class PlayerController : MonoBehaviour
    - NuGetForUnityとR3 Unityモジュールが自動インストール
    - Window > NuGetForUnity からR3コアモジュールをインストール
 3. **Tools > Unity Template > Create Folder Structure** でフォルダ構造を作成
-4. **Tools > Unity Template > Create New 2D URP Scene** で新しいシーンを作成
-5. **Tools > Unity Template > Setup Project Settings** でプロジェクト設定を最適化
-6. 開発開始！
+4. 開発開始！
 
 ## 📋 依存関係のインストール手順
 
