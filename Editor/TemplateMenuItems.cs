@@ -15,6 +15,9 @@ namespace Void2610.UnityTemplate.Editor
         [MenuItem(MENU_ROOT + "Create New 2D URP Scene")]
         public static void CreateNewURPScene()
         {
+            // Ensure Scenes folder exists
+            CreateFolderRecursively("Assets/Scenes");
+            
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             
             // Add basic 2D URP components
@@ -29,13 +32,15 @@ namespace Void2610.UnityTemplate.Editor
             mainCamera.tag = "MainCamera";
             
             // Save the scene
-            var scenePath = EditorUtility.SaveFilePanel("Save New URP Scene", "Assets/Scenes", "NewScene", "unity");
+            var scenePath = EditorUtility.SaveFilePanel("新しい2D URPシーンを保存", "Assets/Scenes", "NewScene", "unity");
             if (!string.IsNullOrEmpty(scenePath))
             {
                 scenePath = FileUtil.GetProjectRelativePath(scenePath);
                 EditorSceneManager.SaveScene(scene, scenePath);
                 AssetDatabase.Refresh();
-                Debug.Log($"Created new 2D URP scene: {scenePath}");
+                Debug.Log($"新しい2D URPシーンを作成しました: {scenePath}");
+                EditorUtility.DisplayDialog("シーン作成完了", 
+                    $"新しい2D URPシーンを作成しました:\n{scenePath}", "OK");
             }
         }
         
@@ -46,12 +51,22 @@ namespace Void2610.UnityTemplate.Editor
             PlayerSettings.colorSpace = ColorSpace.Linear;
             PlayerSettings.gpuSkinning = true;
             
-            // Set up input system
-            var inputSystemSettings = EditorUserBuildSettings.activeBuildTarget;
+            // Configure graphics settings for 2D
+            PlayerSettings.defaultScreenWidth = 1920;
+            PlayerSettings.defaultScreenHeight = 1080;
+            PlayerSettings.runInBackground = true;
             
-            Debug.Log("Project settings configured for optimal 2D development");
-            EditorUtility.DisplayDialog("Setup Complete", 
-                "Project settings have been configured for optimal 2D development with URP.", "OK");
+            // Configure quality settings
+            QualitySettings.vSyncCount = 1;
+            QualitySettings.antiAliasing = 2;
+            
+            Debug.Log("2D開発用にプロジェクト設定を最適化しました");
+            EditorUtility.DisplayDialog("プロジェクト設定完了", 
+                "2D開発とURPに最適なプロジェクト設定を適用しました。\n\n" +
+                "・Linear色空間\n" +
+                "・GPU Skinning有効\n" +
+                "・V-Sync有効\n" +
+                "・アンチエイリアシング設定", "OK");
         }
         
         [MenuItem(MENU_ROOT + "Open Documentation")]
@@ -80,18 +95,51 @@ namespace Void2610.UnityTemplate.Editor
                 "Assets/ScriptableObjects/Data"
             };
             
+            int createdCount = 0;
+            
             foreach (var folder in folders)
             {
-                if (!AssetDatabase.IsValidFolder(folder))
+                if (CreateFolderRecursively(folder))
                 {
-                    var parentFolder = System.IO.Path.GetDirectoryName(folder).Replace('\\', '/');
-                    var folderName = System.IO.Path.GetFileName(folder);
-                    AssetDatabase.CreateFolder(parentFolder, folderName);
+                    createdCount++;
                 }
             }
             
             AssetDatabase.Refresh();
-            Debug.Log("Created organized folder structure for game development");
+            
+            if (createdCount > 0)
+            {
+                Debug.Log($"フォルダ構造を作成しました: {createdCount}個のフォルダを作成");
+                EditorUtility.DisplayDialog("フォルダ構造作成完了", 
+                    $"{createdCount}個のフォルダを作成しました。\nProjectウィンドウで確認してください。", "OK");
+            }
+            else
+            {
+                Debug.Log("フォルダ構造は既に存在しています");
+                EditorUtility.DisplayDialog("フォルダ構造", 
+                    "フォルダ構造は既に存在しています。", "OK");
+            }
+        }
+        
+        private static bool CreateFolderRecursively(string folderPath)
+        {
+            if (AssetDatabase.IsValidFolder(folderPath))
+            {
+                return false; // Already exists
+            }
+            
+            var parentPath = System.IO.Path.GetDirectoryName(folderPath).Replace('\\', '/');
+            var folderName = System.IO.Path.GetFileName(folderPath);
+            
+            // Ensure parent folder exists
+            if (!string.IsNullOrEmpty(parentPath) && parentPath != "Assets")
+            {
+                CreateFolderRecursively(parentPath);
+            }
+            
+            // Create the folder
+            var guid = AssetDatabase.CreateFolder(parentPath, folderName);
+            return !string.IsNullOrEmpty(guid);
         }
         
         [MenuItem(MENU_ROOT + "Create Example Scripts")]
@@ -99,17 +147,37 @@ namespace Void2610.UnityTemplate.Editor
         {
             // Ensure Scripts/Utils folder exists
             var scriptsPath = "Assets/Scripts/Utils";
-            if (!Directory.Exists(scriptsPath))
+            CreateFolderRecursively(scriptsPath);
+            
+            // Check if scripts already exist
+            var gameManagerPath = Path.Combine(scriptsPath, "GameManager.cs");
+            var inputHandlerPath = Path.Combine(scriptsPath, "InputHandler.cs");
+            
+            bool gameManagerExists = File.Exists(gameManagerPath);
+            bool inputHandlerExists = File.Exists(inputHandlerPath);
+            
+            if (gameManagerExists && inputHandlerExists)
             {
-                Directory.CreateDirectory(scriptsPath);
+                bool overwrite = EditorUtility.DisplayDialog("スクリプトが既に存在します", 
+                    "GameManager.cs と InputHandler.cs が既に存在します。\n上書きしますか？", 
+                    "上書き", "キャンセル");
+                
+                if (!overwrite)
+                {
+                    return;
+                }
             }
             
-            // Create GameManager example
+            // Create scripts
             CreateGameManagerScript(scriptsPath);
             CreateInputHandlerScript(scriptsPath);
             
             AssetDatabase.Refresh();
-            Debug.Log("Created example scripts with R3 and Input System integration");
+            
+            Debug.Log("R3とInput Systemの統合例スクリプトを作成しました");
+            EditorUtility.DisplayDialog("サンプルスクリプト作成完了", 
+                "GameManager.cs と InputHandler.cs を作成しました。\n\n" +
+                "これらはR3リアクティブプログラミングと\nInput Systemの使用例です。", "OK");
         }
         
         private static void CreateGameManagerScript(string path)
