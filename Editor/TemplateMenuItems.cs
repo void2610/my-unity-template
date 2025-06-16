@@ -132,6 +132,9 @@ namespace Void2610.UnityTemplate.Editor
             // Copy utility scripts from package
             int copiedScripts = CopyUtilityScripts();
             
+            // Copy NuGet packages.config for automatic R3 installation
+            bool configCopied = CopyNuGetConfig();
+            
             AssetDatabase.Refresh();
             
             var message = "";
@@ -143,13 +146,21 @@ namespace Void2610.UnityTemplate.Editor
             {
                 message += $"{copiedScripts}個のユーティリティスクリプトをコピーしました。\n";
             }
+            if (configCopied)
+            {
+                message += "NuGet packages.config をコピーしました。\n";
+            }
             
-            if (createdCount > 0 || copiedScripts > 0)
+            if (createdCount > 0 || copiedScripts > 0 || configCopied)
             {
                 message += "Projectウィンドウで確認してください。";
-                if (copiedScripts > 0)
+                if (configCopied)
                 {
-                    message += "\n\n注意: R3ライブラリが必要です。先に'Install Dependencies'を実行してください。";
+                    message += "\n\nNuGetForUnityがR3を自動的にインストールします。\n'NuGet → Restore Packages' を実行してください。";
+                }
+                else if (copiedScripts > 0)
+                {
+                    message += "\n\nR3ライブラリはパッケージ依存関係として自動インストールされ、リアクティブ機能が使用できます。";
                 }
                 EditorUtility.DisplayDialog("フォルダ構造作成完了", message, "OK");
             }
@@ -201,41 +212,84 @@ namespace Void2610.UnityTemplate.Editor
             // Ensure target directory exists
             CreateFolderRecursively(targetPath);
             
-            var scriptTemplates = new[] 
+            var scriptFiles = new[] 
             { 
-                ("GameManager.cs", "GameManager.cs.txt"),
-                ("InputHandler.cs", "InputHandler.cs.txt")
+                "GameManager.cs",
+                "InputHandler.cs"
             };
             int copiedCount = 0;
             
             var packagePath = GetPackagePath();
             if (packagePath == null) return 0;
             
+            // Try both Runtime/Scripts/Utils (new approach) and ScriptTemplates (fallback)
+            var runtimeUtilsPath = Path.Combine(Path.GetDirectoryName(packagePath), "Runtime", "Scripts", "Utils");
             var templatesPath = Path.Combine(packagePath, "ScriptTemplates");
             
-            foreach (var (fileName, templateFileName) in scriptTemplates)
+            foreach (var fileName in scriptFiles)
             {
                 var destPath = $"{targetPath}/{fileName}";
                 
                 // Check if destination doesn't exist
                 if (!File.Exists(destPath))
                 {
-                    var templatePath = Path.Combine(templatesPath, templateFileName);
-                    if (File.Exists(templatePath))
+                    // Try new approach first: copy from Runtime/Scripts/Utils
+                    var runtimeScriptPath = Path.Combine(runtimeUtilsPath, fileName);
+                    if (File.Exists(runtimeScriptPath))
                     {
-                        var templateContent = File.ReadAllText(templatePath);
-                        File.WriteAllText(destPath, templateContent);
+                        var scriptContent = File.ReadAllText(runtimeScriptPath);
+                        File.WriteAllText(destPath, scriptContent);
                         copiedCount++;
-                        Debug.Log($"テンプレートからスクリプトをコピーしました: {fileName}");
+                        Debug.Log($"Runtimeからスクリプトをコピーしました: {fileName}");
                     }
                     else
                     {
-                        Debug.LogWarning($"テンプレート未発見: {templatePath}");
+                        // Fallback to old approach: copy from ScriptTemplates
+                        var templatePath = Path.Combine(templatesPath, fileName + ".txt");
+                        if (File.Exists(templatePath))
+                        {
+                            var templateContent = File.ReadAllText(templatePath);
+                            File.WriteAllText(destPath, templateContent);
+                            copiedCount++;
+                            Debug.Log($"テンプレートからスクリプトをコピーしました: {fileName}");
+                        }
+                        else
+                        {
+                            Debug.LogWarning($"スクリプト未発見: {runtimeScriptPath} または {templatePath}");
+                        }
                     }
                 }
             }
             
             return copiedCount;
+        }
+        
+        private static bool CopyNuGetConfig()
+        {
+            var packagePath = GetPackagePath();
+            if (packagePath == null) return false;
+            
+            var sourcePath = Path.Combine(packagePath, "NuGetTemplates", "packages.config");
+            var destPath = "Assets/packages.config";
+            
+            // Check if source exists and destination doesn't exist
+            if (File.Exists(sourcePath) && !File.Exists(destPath))
+            {
+                try
+                {
+                    var configContent = File.ReadAllText(sourcePath);
+                    File.WriteAllText(destPath, configContent);
+                    Debug.Log("NuGet packages.config をコピーしました - R3が自動的にインストールされます");
+                    return true;
+                }
+                catch (System.Exception e)
+                {
+                    Debug.LogError($"packages.config のコピーに失敗しました: {e.Message}");
+                    return false;
+                }
+            }
+            
+            return false;
         }
         
         private static TemplateManifestData LoadTemplateManifest()
@@ -431,11 +485,12 @@ namespace Void2610.UnityTemplate.Editor
                     message += $"注意: {skippedPackagesCount}個のパッケージは互換性の問題でスキップされました。\n\n";
                 }
                 
-                message += "次の手順:\n" +
-                          "1. NuGetForUnityが追加されました\n" +
-                          "2. Window > NuGetForUnity を開いてください\n" +
-                          "3. 'R3' を検索してインストールしてください\n" +
-                          "4. その後、テンプレートツールが使用可能になります";
+                message += "インストール済み:\n" +
+                          "✓ URP 2D Renderer\n" +
+                          "✓ Input System\n" +
+                          "✓ NuGetForUnity (R3インストール用)\n" +
+                          "✓ その他の依存パッケージ\n\n" +
+                          "テンプレートツールが使用可能です。";
                 
                 EditorUtility.DisplayDialog("インストール完了", message, "OK");
                 
@@ -526,10 +581,10 @@ namespace Void2610.UnityTemplate.Editor
         
         private static void ShowPostInstallInstructions()
         {
-            Debug.Log("=== R3セットアップ手順 ===\n" +
-                     "1. Window > NuGetForUnity を開く\n" +
-                     "2. 'R3' を検索してインストール\n" +
-                     "3. Unityを再起動");
+            Debug.Log("=== テンプレート準備完了 ===\n" +
+                     "✓ NuGetForUnity がインストールされました\n" +
+                     "✓ 'Create Folder Structure' でプロジェクト構造を作成できます\n" +
+                     "✓ packages.config により R3 が自動的にインストールされます");
         }
         
         private static void RestoreInstallationStateAfterReload()
