@@ -256,7 +256,10 @@ namespace Void2610.UnityTemplate.Editor
                 ("SingletonMonoBehaviour.cs", "SingletonMonoBehaviour.cs.template"),
                 ("SerializableDictionary.cs", "SerializableDictionary.cs.template"),
                 ("CameraAspectRatioHandler.cs", "CameraAspectRatioHandler.cs.template"),
-                ("ExtendedMethods.cs", "ExtendedMethods.cs.template")
+                ("ExtendedMethods.cs", "ExtendedMethods.cs.template"),
+                ("DebugLogDisplay.cs", "DebugLogDisplay.cs.template"),
+                ("CanvasAspectRatioFitter.cs", "CanvasAspectRatioFitter.cs.template"),
+                ("FloatMove.cs", "FloatMove.cs.template")
             };
             int copiedCount = 0;
             
