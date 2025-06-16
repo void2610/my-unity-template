@@ -25,16 +25,34 @@ namespace Void2610.UnityTemplate.Editor
         public string[] testables = new string[0];
     }
 
+    [System.Serializable]
+    public class InstallationState
+    {
+        public List<string> remainingPackages = new();
+        public bool isInstalling = false;
+        public int totalPackages = 0;
+    }
+
     /// <summary>
     /// Editor menu items for the Unity Template
     /// </summary>
+    [InitializeOnLoad]
     public static class TemplateMenuItems
     {
         private const string MENU_ROOT = "Tools/Unity Template/";
+        private const string PREF_KEY_INSTALL_STATE = "UnityTemplate_InstallState";
+        private const string PREF_KEY_INSTALL_QUEUE = "UnityTemplate_InstallQueue";
         
         private static AddRequest currentAddRequest;
         private static System.Collections.Generic.Queue<string> packageQueue = new();
         private static bool isInstallingPackages = false;
+        private static int totalPackagesToInstall = 0;
+        
+        static TemplateMenuItems()
+        {
+            // ドメインリロード後の状態復元
+            EditorApplication.delayCall += RestoreInstallationStateAfterReload;
+        }
         
         
         [MenuItem(MENU_ROOT + "Install Dependencies")]
@@ -42,8 +60,14 @@ namespace Void2610.UnityTemplate.Editor
         {
             if (isInstallingPackages)
             {
-                EditorUtility.DisplayDialog("インストール中", 
-                    "依存関係のインストールが進行中です。\n完了までお待ちください。", "OK");
+                bool cancel = EditorUtility.DisplayDialog("インストール中", 
+                    "依存関係のインストールが進行中です。\n\nキャンセルしますか？", 
+                    "キャンセル", "待機");
+                
+                if (cancel)
+                {
+                    CancelInstallation();
+                }
                 return;
             }
 
@@ -414,8 +438,14 @@ namespace Void2610.UnityTemplate.Editor
                 packageQueue.Enqueue(package);
             }
             
+            totalPackagesToInstall = packageQueue.Count;
+            
             Debug.Log($"Queue created with {packageQueue.Count} packages: {string.Join(", ", packageQueue)}");
             Debug.Log($"依存関係のインストールを開始します... ({packageQueue.Count}個のパッケージ)");
+            
+            // インストール状態を保存
+            SaveInstallationState();
+            
             EditorUtility.DisplayProgressBar("依存関係インストール", "インストール開始...", 0f);
             
             InstallNextPackage();
@@ -430,6 +460,9 @@ namespace Void2610.UnityTemplate.Editor
                 // 全てのパッケージインストール完了
                 EditorUtility.ClearProgressBar();
                 isInstallingPackages = false;
+                
+                // インストール状態をクリア
+                ClearInstallationState();
                 
                 Debug.Log("依存関係のインストールが完了しました");
                 EditorUtility.DisplayDialog("インストール完了", 
@@ -446,12 +479,15 @@ namespace Void2610.UnityTemplate.Editor
             
             var packageId = packageQueue.Dequeue();
             var packageName = GetPackageDisplayName(packageId);
-            var totalPackages = packageQueue.Count + 1;
-            var currentIndex = totalPackages - packageQueue.Count;
-            var progress = (float)currentIndex / totalPackages;
+            
+            // 状態を保存（キューから取り出した後）
+            SaveInstallationState();
+            
+            var currentIndex = totalPackagesToInstall - packageQueue.Count;
+            var progress = (float)currentIndex / totalPackagesToInstall;
             
             EditorUtility.DisplayProgressBar("依存関係インストール", 
-                $"インストール中: {packageName} ({currentIndex}/{totalPackages})", progress);
+                $"インストール中: {packageName} ({currentIndex}/{totalPackagesToInstall})", progress);
             
             Debug.Log($"パッケージをインストール中: {packageName} ({packageId})");
             Debug.Log($"Calling Client.Add with: {packageId}");
@@ -492,6 +528,9 @@ namespace Void2610.UnityTemplate.Editor
                     EditorUtility.ClearProgressBar();
                     isInstallingPackages = false;
                     
+                    // エラー時もインストール状態をクリア
+                    ClearInstallationState();
+                    
                     var errorMessage = currentAddRequest.Error?.message ?? "Unknown error";
                     Debug.LogError($"パッケージインストールエラー: {errorMessage}");
                     EditorUtility.DisplayDialog("インストールエラー", 
@@ -515,6 +554,84 @@ namespace Void2610.UnityTemplate.Editor
                          "これで Templates ツールが正常に動作します！";
                          
             Debug.Log(message);
+        }
+        
+        private static void RestoreInstallationStateAfterReload()
+        {
+            // EditorPrefsから状態を復元
+            var stateJson = EditorPrefs.GetString(PREF_KEY_INSTALL_STATE, "");
+            if (string.IsNullOrEmpty(stateJson))
+            {
+                return;
+            }
+            
+            try
+            {
+                var state = JsonUtility.FromJson<InstallationState>(stateJson);
+                if (state != null && state.isInstalling && state.remainingPackages.Count > 0)
+                {
+                    Debug.Log("=== パッケージインストールを再開します ===");
+                    Debug.Log($"残りのパッケージ: {state.remainingPackages.Count}個");
+                    
+                    // キューを復元
+                    packageQueue.Clear();
+                    foreach (var package in state.remainingPackages)
+                    {
+                        packageQueue.Enqueue(package);
+                    }
+                    
+                    isInstallingPackages = true;
+                    totalPackagesToInstall = state.totalPackages;
+                    
+                    // 少し待ってからインストールを再開
+                    EditorApplication.delayCall += () =>
+                    {
+                        EditorUtility.DisplayProgressBar("依存関係インストール", "インストールを再開中...", 0f);
+                        InstallNextPackage();
+                    };
+                }
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"インストール状態の復元に失敗しました: {e.Message}");
+                ClearInstallationState();
+            }
+        }
+        
+        private static void SaveInstallationState()
+        {
+            var state = new InstallationState
+            {
+                remainingPackages = packageQueue.ToList(),
+                isInstalling = isInstallingPackages,
+                totalPackages = totalPackagesToInstall
+            };
+            
+            var stateJson = JsonUtility.ToJson(state);
+            EditorPrefs.SetString(PREF_KEY_INSTALL_STATE, stateJson);
+        }
+        
+        private static void ClearInstallationState()
+        {
+            EditorPrefs.DeleteKey(PREF_KEY_INSTALL_STATE);
+            EditorPrefs.DeleteKey(PREF_KEY_INSTALL_QUEUE);
+        }
+        
+        private static void CancelInstallation()
+        {
+            Debug.Log("=== パッケージインストールをキャンセルしました ===");
+            
+            isInstallingPackages = false;
+            packageQueue.Clear();
+            currentAddRequest = null;
+            
+            EditorApplication.update -= PackageInstallProgress;
+            EditorUtility.ClearProgressBar();
+            
+            ClearInstallationState();
+            
+            EditorUtility.DisplayDialog("キャンセル完了", 
+                "依存関係のインストールをキャンセルしました。", "OK");
         }
     }
 }
