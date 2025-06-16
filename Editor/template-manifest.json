@@ -3,7 +3,7 @@
     "com.unity.render-pipelines.universal",
     "com.unity.textmeshpro",
     "com.unity.ide.rider",
-    "com.unity.inputsystem",
+    "com.unity.inputsystem"
   ],
   "gitPackages": [
     "https://github.com/GlitchEnzo/NuGetForUnity.git?path=/src/NuGetForUnity",
