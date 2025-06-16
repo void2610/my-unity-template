@@ -166,6 +166,38 @@ namespace Void2610.UnityTemplate.Editor
             }
         }
         
+        [MenuItem(MENU_ROOT + "Copy License Files")]
+        public static void CopyLicenseFiles()
+        {
+            // Check if LicenseMaster is installed
+            var licenseMasterPath = "Packages/unitylicensemaster";
+            if (!AssetDatabase.IsValidFolder(licenseMasterPath))
+            {
+                EditorUtility.DisplayDialog("エラー", 
+                    "LicenseMasterがインストールされていません。\n" +
+                    "先に'Install Dependencies'を実行してLicenseMasterをインストールしてください。", 
+                    "OK");
+                return;
+            }
+            
+            int copiedCount = CopyLicenseFilesFromTemplate();
+            
+            AssetDatabase.Refresh();
+            
+            if (copiedCount > 0)
+            {
+                EditorUtility.DisplayDialog("ライセンスファイルコピー完了", 
+                    $"{copiedCount}個のライセンスファイルをコピーしました。\n" +
+                    "プロジェクトルートで確認してください。", 
+                    "OK");
+            }
+            else
+            {
+                EditorUtility.DisplayDialog("ライセンスファイル", 
+                    "ライセンスファイルは既に存在しているか、テンプレートが見つかりません。", "OK");
+            }
+        }
+        
         private static bool CreateFolderRecursively(string folderPath)
         {
             if (AssetDatabase.IsValidFolder(folderPath))
@@ -238,6 +270,46 @@ namespace Void2610.UnityTemplate.Editor
                     {
                         Debug.LogWarning($"テンプレート未発見: {templatePath}");
                     }
+                }
+            }
+            
+            return copiedCount;
+        }
+        
+        private static int CopyLicenseFilesFromTemplate()
+        {
+            var packagePath = GetPackagePath();
+            if (packagePath == null) return 0;
+            
+            var licenseTemplatesPath = Path.Combine(packagePath, "LicenseTemplates");
+            
+            // LicenseMasterのライセンスファイル保存先ディレクトリを作成
+            var targetPath = "Assets/LicenseMaster";
+            if (!AssetDatabase.IsValidFolder(targetPath))
+            {
+                CreateFolderRecursively(targetPath);
+            }
+            
+            // .assetファイルを検索してコピー
+            var sourceDir = new DirectoryInfo(licenseTemplatesPath);
+            if (!sourceDir.Exists)
+            {
+                Debug.LogWarning($"ライセンステンプレートフォルダが見つかりません: {licenseTemplatesPath}");
+                return 0;
+            }
+            
+            var licenseFiles = sourceDir.GetFiles("*.asset");
+            int copiedCount = 0;
+            
+            foreach (var file in licenseFiles)
+            {
+                var destPath = Path.Combine(targetPath, file.Name);
+                
+                if (!File.Exists(destPath))
+                {
+                    File.Copy(file.FullName, destPath);
+                    copiedCount++;
+                    Debug.Log($"ライセンスファイルをコピーしました: {file.Name}");
                 }
             }
             
