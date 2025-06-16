@@ -1,31 +1,11 @@
 {
   "packages": [
-    "com.unity.2d.animation",
-    "com.unity.2d.pixel-perfect",
-    "com.unity.2d.psdimporter",
-    "com.unity.2d.sprite",
-    "com.unity.2d.spriteshape",
-    "com.unity.2d.tilemap",
-    "com.unity.2d.tilemap.extras",
     "com.unity.addressables",
-    "com.unity.burst",
-    "com.unity.collab-proxy",
-    "com.unity.collections",
-    "com.unity.inputsystem",
     "com.unity.localization",
-    "com.unity.mathematics",
-    "com.unity.multiplayer.center",
-    "com.unity.performance.profile-analyzer",
     "com.unity.render-pipelines.universal",
-    "com.unity.test-framework",
     "com.unity.textmeshpro",
-    "com.unity.timeline",
-    "com.unity.ugui",
     "com.unity.visualeffectgraph",
-    "com.unity.visualscripting",
-    "com.unity.ide.rider",
-    "com.unity.ide.visualstudio",
-    "com.unity.ide.vscode"
+    "com.unity.ide.rider"
   ],
   "gitPackages": [
     "https://github.com/GlitchEnzo/NuGetForUnity.git?path=/src/NuGetForUnity",

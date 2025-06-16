@@ -47,25 +47,36 @@ namespace Void2610.UnityTemplate.Editor
                 return;
             }
 
+            Debug.Log("=== Dependencies Installation Started ===");
+
             // Load template manifest
             var templateManifest = LoadTemplateManifest();
             if (templateManifest == null)
             {
+                Debug.LogError("Failed to load template manifest");
                 EditorUtility.DisplayDialog("エラー", 
                     "テンプレートマニフェストの読み込みに失敗しました。", "OK");
                 return;
             }
 
+            Debug.Log($"Template manifest loaded: {templateManifest.packages.Length} packages, {templateManifest.gitPackages.Length} git packages");
+
             // Count packages to install
             var currentManifest = LoadCurrentManifest();
+            Debug.Log($"Current manifest loaded: {currentManifest.dependencies.Count} dependencies");
+
             var packagesToInstall = GetPackagesToInstall(templateManifest, currentManifest);
+            Debug.Log($"Packages to install: {packagesToInstall.Count}");
 
             if (packagesToInstall.Count == 0)
             {
+                Debug.Log("All dependencies already installed");
                 EditorUtility.DisplayDialog("依存関係", 
                     "すべての依存関係は既にインストール済みです。", "OK");
                 return;
             }
+
+            Debug.Log($"Packages to install: {string.Join(", ", packagesToInstall)}");
 
             bool proceed = EditorUtility.DisplayDialog("依存関係のインストール", 
                 $"以下の{packagesToInstall.Count}個のパッケージをインストールします:\n\n" +
@@ -356,6 +367,8 @@ namespace Void2610.UnityTemplate.Editor
 
         private static void StartDependencyInstallation(List<string> packagesToInstall)
         {
+            Debug.Log($"StartDependencyInstallation called with {packagesToInstall.Count} packages");
+            
             isInstallingPackages = true;
             
             packageQueue.Clear();
@@ -364,16 +377,23 @@ namespace Void2610.UnityTemplate.Editor
             var nugetPackage = packagesToInstall.FirstOrDefault(p => p.Contains("NuGetForUnity"));
             if (!string.IsNullOrEmpty(nugetPackage))
             {
+                Debug.Log($"Found NuGetForUnity package: {nugetPackage}");
                 packageQueue.Enqueue(nugetPackage);
                 packagesToInstall.Remove(nugetPackage);
+            }
+            else
+            {
+                Debug.Log("No NuGetForUnity package found");
             }
             
             // 残りのパッケージをキューに追加
             foreach (var package in packagesToInstall)
             {
+                Debug.Log($"Adding package to queue: {package}");
                 packageQueue.Enqueue(package);
             }
             
+            Debug.Log($"Queue created with {packageQueue.Count} packages: {string.Join(", ", packageQueue)}");
             Debug.Log($"依存関係のインストールを開始します... ({packageQueue.Count}個のパッケージ)");
             EditorUtility.DisplayProgressBar("依存関係インストール", "インストール開始...", 0f);
             
@@ -382,6 +402,8 @@ namespace Void2610.UnityTemplate.Editor
         
         private static void InstallNextPackage()
         {
+            Debug.Log($"InstallNextPackage called. Queue count: {packageQueue.Count}");
+            
             if (packageQueue.Count == 0)
             {
                 // 全てのパッケージインストール完了
@@ -411,12 +433,25 @@ namespace Void2610.UnityTemplate.Editor
                 $"インストール中: {packageName} ({currentIndex}/{totalPackages})", progress);
             
             Debug.Log($"パッケージをインストール中: {packageName} ({packageId})");
+            Debug.Log($"Calling Client.Add with: {packageId}");
+            
             currentAddRequest = Client.Add(packageId);
+            Debug.Log($"AddRequest created. Is null: {currentAddRequest == null}");
+            
             EditorApplication.update += PackageInstallProgress;
         }
         
         private static void PackageInstallProgress()
         {
+            if (currentAddRequest == null)
+            {
+                Debug.LogError("currentAddRequest is null in PackageInstallProgress");
+                EditorApplication.update -= PackageInstallProgress;
+                return;
+            }
+            
+            Debug.Log($"PackageInstallProgress - IsCompleted: {currentAddRequest.IsCompleted}, Status: {currentAddRequest.Status}");
+            
             if (currentAddRequest.IsCompleted)
             {
                 EditorApplication.update -= PackageInstallProgress;
@@ -436,9 +471,10 @@ namespace Void2610.UnityTemplate.Editor
                     EditorUtility.ClearProgressBar();
                     isInstallingPackages = false;
                     
-                    Debug.LogError($"パッケージインストールエラー: {currentAddRequest.Error.message}");
+                    var errorMessage = currentAddRequest.Error?.message ?? "Unknown error";
+                    Debug.LogError($"パッケージインストールエラー: {errorMessage}");
                     EditorUtility.DisplayDialog("インストールエラー", 
-                        $"パッケージのインストールに失敗しました:\n{currentAddRequest.Error.message}\n\n" +
+                        $"パッケージのインストールに失敗しました:\n{errorMessage}\n\n" +
                         "手動でインストールしてください。", "OK");
                 }
                 
