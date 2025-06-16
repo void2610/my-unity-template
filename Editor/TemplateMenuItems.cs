@@ -80,19 +80,14 @@ namespace Void2610.UnityTemplate.Editor
         {
             var folders = new[]
             {
-                "Assets/Scripts/Gameplay",
-                "Assets/Scripts/UI", 
-                "Assets/Scripts/Data",
-                "Assets/Sprites/Characters",
-                "Assets/Sprites/Environment",
-                "Assets/Sprites/UI",
+                "Assets/Scripts",
+                "Assets/Scripts/Utils",
+                "Assets/Sprites",
                 "Assets/Audio/BGM",
                 "Assets/Audio/SE",
-                "Assets/Materials/2D",
-                "Assets/Prefabs/Characters",
-                "Assets/Prefabs/Environment",
-                "Assets/Prefabs/UI",
-                "Assets/ScriptableObjects/Data"
+                "Assets/Materials",
+                "Assets/Prefabs",
+                "Assets/ScriptableObjects"
             };
             
             int createdCount = 0;
@@ -105,19 +100,32 @@ namespace Void2610.UnityTemplate.Editor
                 }
             }
             
+            // Copy utility scripts from package
+            int copiedScripts = CopyUtilityScripts();
+            
             AssetDatabase.Refresh();
             
+            var message = "";
             if (createdCount > 0)
             {
-                Debug.Log($"フォルダ構造を作成しました: {createdCount}個のフォルダを作成");
-                EditorUtility.DisplayDialog("フォルダ構造作成完了", 
-                    $"{createdCount}個のフォルダを作成しました。\nProjectウィンドウで確認してください。", "OK");
+                message += $"{createdCount}個のフォルダを作成しました。\n";
+            }
+            if (copiedScripts > 0)
+            {
+                message += $"{copiedScripts}個のユーティリティスクリプトをコピーしました。\n";
+            }
+            
+            if (createdCount > 0 || copiedScripts > 0)
+            {
+                message += "Projectウィンドウで確認してください。";
+                Debug.Log($"フォルダ構造作成完了: {message}");
+                EditorUtility.DisplayDialog("フォルダ構造作成完了", message, "OK");
             }
             else
             {
-                Debug.Log("フォルダ構造は既に存在しています");
+                Debug.Log("フォルダ構造とスクリプトは既に存在しています");
                 EditorUtility.DisplayDialog("フォルダ構造", 
-                    "フォルダ構造は既に存在しています。", "OK");
+                    "フォルダ構造とスクリプトは既に存在しています。", "OK");
             }
         }
         
@@ -142,6 +150,35 @@ namespace Void2610.UnityTemplate.Editor
             return !string.IsNullOrEmpty(guid);
         }
         
+        private static int CopyUtilityScripts()
+        {
+            var packagePath = "Packages/com.void2610.unity-template/Runtime";
+            var targetPath = "Assets/Scripts/Utils";
+            
+            // Ensure target directory exists
+            CreateFolderRecursively(targetPath);
+            
+            var scriptFiles = new[] { "GameManager.cs", "InputHandler.cs" };
+            int copiedCount = 0;
+            
+            foreach (var scriptFile in scriptFiles)
+            {
+                var sourcePath = $"{packagePath}/{scriptFile}";
+                var destPath = $"{targetPath}/{scriptFile}";
+                
+                // Check if source exists and destination doesn't exist
+                var sourceAsset = AssetDatabase.LoadAssetAtPath<TextAsset>(sourcePath);
+                if (sourceAsset != null && !File.Exists(destPath))
+                {
+                    var scriptContent = sourceAsset.text;
+                    File.WriteAllText(destPath, scriptContent);
+                    copiedCount++;
+                }
+            }
+            
+            return copiedCount;
+        }
+        
         [MenuItem(MENU_ROOT + "Create Example Scripts")]
         public static void CreateExampleScripts()
         {
@@ -149,34 +186,37 @@ namespace Void2610.UnityTemplate.Editor
             var scriptsPath = "Assets/Scripts/Utils";
             CreateFolderRecursively(scriptsPath);
             
-            // Check if scripts already exist
-            var gameManagerPath = Path.Combine(scriptsPath, "GameManager.cs");
-            var inputHandlerPath = Path.Combine(scriptsPath, "InputHandler.cs");
+            // Try to copy from package first, then generate if needed
+            int copiedCount = CopyUtilityScripts();
             
-            bool gameManagerExists = File.Exists(gameManagerPath);
-            bool inputHandlerExists = File.Exists(inputHandlerPath);
-            
-            if (gameManagerExists && inputHandlerExists)
+            if (copiedCount == 0)
             {
-                bool overwrite = EditorUtility.DisplayDialog("スクリプトが既に存在します", 
-                    "GameManager.cs と InputHandler.cs が既に存在します。\n上書きしますか？", 
-                    "上書き", "キャンセル");
+                // Check if scripts already exist
+                var gameManagerPath = Path.Combine(scriptsPath, "GameManager.cs");
+                var inputHandlerPath = Path.Combine(scriptsPath, "InputHandler.cs");
                 
-                if (!overwrite)
+                bool gameManagerExists = File.Exists(gameManagerPath);
+                bool inputHandlerExists = File.Exists(inputHandlerPath);
+                
+                if (gameManagerExists && inputHandlerExists)
                 {
+                    EditorUtility.DisplayDialog("スクリプトが既に存在します", 
+                        "GameManager.cs と InputHandler.cs が既に存在します。", "OK");
                     return;
                 }
+                
+                // Generate scripts if package copy failed
+                CreateGameManagerScript(scriptsPath);
+                CreateInputHandlerScript(scriptsPath);
+                copiedCount = 2;
             }
-            
-            // Create scripts
-            CreateGameManagerScript(scriptsPath);
-            CreateInputHandlerScript(scriptsPath);
             
             AssetDatabase.Refresh();
             
             Debug.Log("R3とInput Systemの統合例スクリプトを作成しました");
             EditorUtility.DisplayDialog("サンプルスクリプト作成完了", 
-                "GameManager.cs と InputHandler.cs を作成しました。\n\n" +
+                $"{copiedCount}個のスクリプトを作成しました:\n" +
+                "GameManager.cs と InputHandler.cs\n\n" +
                 "これらはR3リアクティブプログラミングと\nInput Systemの使用例です。", "OK");
         }
         
