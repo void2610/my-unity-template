@@ -13,7 +13,6 @@
     "https://github.com/mob-sakai/UnmaskForUGUI.git",
     "https://github.com/naichilab/unityroom-client-library.git?path=Assets/unityroom",
     "https://github.com/hadashiA/VContainer.git?path=VContainer/Assets/VContainer",
-    "https://github.com/syskentokyo/unitylicensemaster.git",
     "https://github.com/AnnulusGames/LitMotion.git?path=src/LitMotion/Assets/LitMotion"
   ],
   "testables": [

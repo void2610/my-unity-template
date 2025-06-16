@@ -12,6 +12,7 @@ URP、R3 リアクティブ拡張、Input System、整理されたプロジェ�
 - 🎮 **Input System** - モダンな入力処理システム
 - ⚡ **R3 リアクティブ拡張** - Unity用リアクティブプログラミング（自動インストール）
 - 🔧 **NuGetForUnity** - .NETパッケージ管理（自動インストール）
+- 📄 **LicenseMaster統合** - ライブラリライセンス管理（手動インストール）
 - 🗂️ **整理された構造** - スプライト、オーディオ、スクリプト用のクリーンなフォルダ構成
 - 🛠️ **自動セットアップ** - 依存関係の自動インストールとプロジェクト構築
 - 🚀 **Unity 6対応** - Unity 2022.3以降、Unity 6にも対応
@@ -52,15 +53,26 @@ URP、R3 リアクティブ拡張、Input System、整理されたプロジェ�
 **Tools > Unity Template > Create Folder Structure** を実行:
 
 - 整理されたフォルダ階層を自動作成
+
+### 3. ユーティリティスクリプトのコピー
+
+**Tools > Unity Template > Copy Utility Scripts** を実行:
+
 - GameManagerとInputHandlerの例をコピー
 
-### 3. R3の最終セットアップ
+### 4. R3の最終セットアップ
 
 1. **Window > NuGetForUnity** を開く
 2. 「R3」を検索してインストール
 3. Unityを再起動
 
-### 4. 開発開始！
+### 5. LicenseMasterの手動インストール（オプション）
+
+1. [LicenseMaster Releases](https://github.com/syskentokyo/unitylicensemaster/releases)からUnityPackageをダウンロード
+2. Unityプロジェクトにインポート
+3. **Tools > Unity Template > Copy License Files** を実行してライセンス管理開始
+
+### 6. 開発開始！
 
 生成されるサンプルスクリプト:
 - `GameManager.cs` - R3リアクティブプログラミングパターン
@@ -90,9 +102,18 @@ URP、R3 リアクティブ拡張、Input System、整理されたプロジェ�
 - **Visual Effect Graph** - ビジュアルエフェクト
 - **Localization** - 多言語対応
 
-### 外部パッケージ
+### 外部パッケージ（自動インストール）
 - **NuGetForUnity** - .NETパッケージマネージャー
 - **R3 Unity** - リアクティブプログラミングライブラリ
+- **UniTask** - 非同期処理ライブラリ
+- **VContainer** - DIコンテナ
+- **LitMotion** - 高速Tweenライブラリ
+- **UIEffect** - UI特殊効果
+- **UnmaskForUGUI** - UIマスキング
+- **Unityroom Client** - Unityroom連携
+
+### 手動インストール
+- **LicenseMaster** - ライブラリライセンス管理ツール
 
 ### Unity 6での互換性
 - TextMeshPro、UGUIなど組み込みパッケージは自動的にスキップ
@@ -151,8 +172,11 @@ public class PlayerController : MonoBehaviour
 1. **パッケージをインストール** (Unity Package Manager経由)
 2. **Tools > Unity Template > Install Dependencies** で依存関係を自動インストール
 3. **Tools > Unity Template > Create Folder Structure** でプロジェクト構造を作成
-4. **Window > NuGetForUnity** でR3をインストール
-5. **開発開始！**
+4. **Tools > Unity Template > Copy Utility Scripts** でサンプルスクリプトをコピー
+5. **Window > NuGetForUnity** でR3をインストール
+6. **LicenseMasterを手動インストール** (オプション)
+7. **Tools > Unity Template > Copy License Files** でライセンス管理開始 (オプション)
+8. **開発開始！**
 
 ## 🔧 トラブルシューティング
 

@@ -169,14 +169,24 @@ namespace Void2610.UnityTemplate.Editor
         [MenuItem(MENU_ROOT + "Copy License Files")]
         public static void CopyLicenseFiles()
         {
-            // Check if LicenseMaster is installed
-            var licenseMasterPath = "Packages/unitylicensemaster";
-            if (!AssetDatabase.IsValidFolder(licenseMasterPath))
+            // Check if LicenseMaster is installed (manual installation)
+            var licenseMasterAssembly = System.AppDomain.CurrentDomain.GetAssemblies()
+                .FirstOrDefault(a => a.GetName().Name.Contains("LicenseMaster"));
+                
+            if (licenseMasterAssembly == null)
             {
-                EditorUtility.DisplayDialog("エラー", 
-                    "LicenseMasterがインストールされていません。\n" +
-                    "先に'Install Dependencies'を実行してLicenseMasterをインストールしてください。", 
-                    "OK");
+                bool openGitHub = EditorUtility.DisplayDialog("LicenseMaster未インストール", 
+                    "LicenseMasterが手動でインストールされていません。\n\n" +
+                    "1. 以下のGitHubページからUnityPackageをダウンロード\n" +
+                    "2. Unityプロジェクトにインポート\n" +
+                    "3. 再度この機能を実行\n\n" +
+                    "GitHubページを開きますか？", 
+                    "GitHubを開く", "キャンセル");
+                
+                if (openGitHub)
+                {
+                    Application.OpenURL("https://github.com/syskentokyo/unitylicensemaster/releases");
+                }
                 return;
             }
             
@@ -188,7 +198,7 @@ namespace Void2610.UnityTemplate.Editor
             {
                 EditorUtility.DisplayDialog("ライセンスファイルコピー完了", 
                     $"{copiedCount}個のライセンスファイルをコピーしました。\n" +
-                    "プロジェクトルートで確認してください。", 
+                    "Assets/LicenseMaster/フォルダで確認してください。", 
                     "OK");
             }
             else
@@ -511,11 +521,20 @@ namespace Void2610.UnityTemplate.Editor
                 
                 message += "次の手順:\n" +
                           "1. NuGetForUnityが追加されました\n" +
-                          "2. Window > NuGetForUnity を開いてください\n" +
-                          "3. 'R3' を検索してインストールしてください\n" +
-                          "4. その後、テンプレートツールが使用可能になります";
+                          "2. Window > NuGetForUnity を開いて 'R3' をインストール\n" +
+                          "3. LicenseMasterを手動でインストール:\n" +
+                          "   - https://github.com/syskentokyo/unitylicensemaster/releases\n" +
+                          "   - UnityPackageをダウンロード・インポート\n" +
+                          "4. 'Copy License Files'でライセンス管理開始";
                 
-                EditorUtility.DisplayDialog("インストール完了", message, "OK");
+                bool openLicenseMaster = EditorUtility.DisplayDialog("インストール完了", 
+                    message + "\n\nLicenseMasterのダウンロードページを開きますか？", 
+                    "ページを開く", "後で");
+                
+                if (openLicenseMaster)
+                {
+                    Application.OpenURL("https://github.com/syskentokyo/unitylicensemaster/releases");
+                }
                 
                 ShowPostInstallInstructions();
                 skippedPackagesCount = 0; // リセット
