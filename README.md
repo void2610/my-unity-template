@@ -151,25 +151,13 @@ public class PlayerController : MonoBehaviour
 
 これでR3リアクティブプログラミングが利用可能になります！
 
-## ⚙️ 依存関係管理（manifest.json）
+## ⚙️ 依存関係管理
 
-このテンプレートでは、`Editor/Resources/template-manifest.json`で依存関係を管理しています。
-
-### 含まれるパッケージ
-- **Unity 2D関連**: Animation, Pixel Perfect, PSD Importer, Sprite Shape, Tilemap
-- **開発支援**: Addressables, Burst, Collections, Mathematics
-- **UI/入力**: Input System, TextMesh Pro, URP, Visual Scripting
-- **外部ライブラリ**: NuGetForUnity, R3 Unity Module
-- **開発ツール**: Performance Profile Analyzer, Test Framework
-
-### カスタマイズ方法
 既存プロジェクトの依存関係を使用したい場合：
 
 1. 既存プロジェクトの`Packages/manifest.json`をコピー
-2. `Editor/Resources/template-manifest.json`として保存
-3. パッケージを再ビルド
-
-これにより、既存プロジェクトと同じ依存関係セットを新しいプロジェクトに適用できます。
+2. このリポジトリの`Editor/Resources/template-manifest.json`を更新
+3. Gitにコミット・プッシュ
 
 ## 🤝 コントリビューション
 
