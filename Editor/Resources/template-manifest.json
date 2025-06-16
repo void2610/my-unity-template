@@ -5,7 +5,10 @@
     "com.unity.render-pipelines.universal",
     "com.unity.textmeshpro",
     "com.unity.visualeffectgraph",
-    "com.unity.ide.rider"
+    "com.unity.ide.rider",
+    "com.unity.inputsystem",
+    "com.unity.2d.sprite",
+    "com.unity.2d.tilemap"
   ],
   "gitPackages": [
     "https://github.com/GlitchEnzo/NuGetForUnity.git?path=/src/NuGetForUnity",

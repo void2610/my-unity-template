@@ -329,9 +329,27 @@ namespace Void2610.UnityTemplate.Editor
         {
             var packagesToInstall = new List<string>();
 
+            // Unity 6で組み込みになったパッケージのリスト
+            var unity6BuiltInPackages = new HashSet<string>
+            {
+                "com.unity.textmeshpro", // Unity 6では組み込み
+                "com.unity.ugui" // Unity 6では組み込み
+            };
+            
+            // Unityバージョンチェック
+            bool isUnity6OrNewer = Application.unityVersion.StartsWith("6") || 
+                                  Application.unityVersion.CompareTo("6000") >= 0;
+
             // 通常のUnityパッケージ（バージョン不指定）
             foreach (var packageId in templateManifest.packages)
             {
+                // Unity 6以降で組み込みパッケージはスキップ
+                if (isUnity6OrNewer && unity6BuiltInPackages.Contains(packageId))
+                {
+                    Debug.Log($"スキップ: {packageId} はUnity 6で組み込みパッケージです");
+                    continue;
+                }
+                
                 if (!currentManifest.dependencies.ContainsKey(packageId))
                 {
                     packagesToInstall.Add(packageId);
@@ -415,6 +433,7 @@ namespace Void2610.UnityTemplate.Editor
             Debug.Log($"StartDependencyInstallation called with {packagesToInstall.Count} packages");
             
             isInstallingPackages = true;
+            skippedPackagesCount = 0; // リセット
             
             packageQueue.Clear();
             
@@ -451,6 +470,8 @@ namespace Void2610.UnityTemplate.Editor
             InstallNextPackage();
         }
         
+        private static int skippedPackagesCount = 0;
+        
         private static void InstallNextPackage()
         {
             Debug.Log($"InstallNextPackage called. Queue count: {packageQueue.Count}");
@@ -465,15 +486,23 @@ namespace Void2610.UnityTemplate.Editor
                 ClearInstallationState();
                 
                 Debug.Log("依存関係のインストールが完了しました");
-                EditorUtility.DisplayDialog("インストール完了", 
-                    "依存関係のインストールが完了しました。\n\n" +
-                    "次の手順:\n" +
-                    "1. NuGetForUnityが追加されました\n" +
-                    "2. Window > NuGetForUnity を開いてください\n" +
-                    "3. 'R3' を検索してインストールしてください\n" +
-                    "4. その後、テンプレートツールが使用可能になります", "OK");
+                
+                var message = "依存関係のインストールが完了しました。\n\n";
+                if (skippedPackagesCount > 0)
+                {
+                    message += $"注意: {skippedPackagesCount}個のパッケージは互換性の問題でスキップされました。\n\n";
+                }
+                
+                message += "次の手順:\n" +
+                          "1. NuGetForUnityが追加されました\n" +
+                          "2. Window > NuGetForUnity を開いてください\n" +
+                          "3. 'R3' を検索してインストールしてください\n" +
+                          "4. その後、テンプレートツールが使用可能になります";
+                
+                EditorUtility.DisplayDialog("インストール完了", message, "OK");
                 
                 ShowPostInstallInstructions();
+                skippedPackagesCount = 0; // リセット
                 return;
             }
             
@@ -525,17 +554,36 @@ namespace Void2610.UnityTemplate.Editor
                 }
                 else
                 {
-                    EditorUtility.ClearProgressBar();
-                    isInstallingPackages = false;
-                    
-                    // エラー時もインストール状態をクリア
-                    ClearInstallationState();
-                    
                     var errorMessage = currentAddRequest.Error?.message ?? "Unknown error";
                     Debug.LogError($"パッケージインストールエラー: {errorMessage}");
-                    EditorUtility.DisplayDialog("インストールエラー", 
-                        $"パッケージのインストールに失敗しました:\n{errorMessage}\n\n" +
-                        "手動でインストールしてください。", "OK");
+                    
+                    // Unity 6でのTextMeshPro互換性問題などを検出
+                    bool isCompatibilityError = errorMessage.Contains("Cannot find a version") || 
+                                               errorMessage.Contains("compatible with this Unity version");
+                    
+                    if (isCompatibilityError)
+                    {
+                        Debug.LogWarning($"パッケージ互換性の問題により、このパッケージをスキップします");
+                        skippedPackagesCount++;
+                        
+                        // 次のパッケージのインストールを継続
+                        EditorApplication.delayCall += () => {
+                            InstallNextPackage();
+                        };
+                    }
+                    else
+                    {
+                        // 重大なエラーの場合は停止
+                        EditorUtility.ClearProgressBar();
+                        isInstallingPackages = false;
+                        
+                        // エラー時もインストール状態をクリア
+                        ClearInstallationState();
+                        
+                        EditorUtility.DisplayDialog("インストールエラー", 
+                            $"パッケージのインストールに失敗しました:\n{errorMessage}\n\n" +
+                            "手動でインストールしてください。", "OK");
+                    }
                 }
                 
                 currentAddRequest = null;
