@@ -1,11 +1,11 @@
 {
-    "name": "com.shuya.unity-template.Tests",
-    "rootNamespace": "Shuya.UnityTemplate.Tests",
+    "name": "com.void2610.unity-template.Tests",
+    "rootNamespace": "Void2610.UnityTemplate.Tests",
     "references": [
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
-        "com.shuya.unity-template.Runtime",
-        "com.shuya.unity-template.Editor"
+        "com.void2610.unity-template.Runtime",
+        "com.void2610.unity-template.Editor"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 
-namespace Shuya.UnityTemplate.Editor
+namespace Void2610.UnityTemplate.Editor
 {
     /// <summary>
     /// Editor menu items for the Unity Template
@@ -47,7 +47,7 @@ namespace Shuya.UnityTemplate.Editor
         [MenuItem(MENU_ROOT + "Open Documentation")]
         public static void OpenDocumentation()
         {
-            Application.OpenURL("https://github.com/your-username/my-unity-template");
+            Application.OpenURL("https://github.com/void2610/my-unity-template");
         }
         
         [MenuItem(MENU_ROOT + "Create Folder Structure")]

@@ -42,7 +42,7 @@ A comprehensive Unity project template package featuring URP 2D, R3 reactive ext
 After installing the package:
 
 1. Go to **Window > Package Manager**
-2. Find "Shuya's Unity Project Template" in the list
+2. Find "void2610's Unity Project Template" in the list
 3. Expand **Samples** section
 4. Click **Import** next to "Project Template Files"
 
@@ -71,12 +71,12 @@ The template provides example scripts demonstrating:
 ├── README.md                      # This file
 ├── LICENSE                        # MIT License
 ├── Runtime/                       # Runtime scripts and assets
-│   └── com.shuya.unity-template.Runtime.asmdef
+│   └── com.void2610.unity-template.Runtime.asmdef
 ├── Editor/                        # Editor scripts and tools
 │   ├── TemplateMenuItems.cs      # Custom menu items
-│   └── com.shuya.unity-template.Editor.asmdef
+│   └── com.void2610.unity-template.Editor.asmdef
 ├── Tests/                         # Test scripts
-│   └── com.shuya.unity-template.Tests.asmdef
+│   └── com.void2610.unity-template.Tests.asmdef
 └── Samples~/
     └── ProjectTemplate/           # Complete project template
         ├── Scripts/               # Example scripts

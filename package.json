@@ -1,12 +1,12 @@
 {
-  "name": "com.shuya.unity-template",
+  "name": "com.void2610.unity-template",
   "version": "1.0.0",
-  "displayName": "Shuya's Unity Project Template",
+  "displayName": "void2610's Unity Project Template",
   "description": "A comprehensive Unity project template featuring URP 2D, TextMesh Pro, R3 reactive extensions, Input System, and essential project structure for rapid game development.",
   "unity": "2022.3",
   "author": {
-    "name": "Shuya",
-    "url": "https://github.com/your-username"
+    "name": "void2610",
+    "url": "https://github.com/void2610"
   },
   "keywords": [
     "template",

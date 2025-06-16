@@ -2,7 +2,7 @@ using UnityEngine;
 using R3;
 using System;
 
-namespace Shuya.UnityTemplate
+namespace Void2610.UnityTemplate
 {
     /// <summary>
     /// Example GameManager demonstrating R3 reactive extensions usage

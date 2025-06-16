@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using R3;
 
-namespace Shuya.UnityTemplate
+namespace Void2610.UnityTemplate
 {
     /// <summary>
     /// Example input handler using Unity Input System and R3

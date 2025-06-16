@@ -1,12 +1,13 @@
 {
-    "name": "com.shuya.unity-template.Editor",
-    "rootNamespace": "Shuya.UnityTemplate.Editor",
+    "name": "com.void2610.unity-template.Runtime",
+    "rootNamespace": "Void2610.UnityTemplate",
     "references": [
-        "com.shuya.unity-template.Runtime"
+        "Unity.InputSystem",
+        "Unity.TextMeshPro",
+        "Unity.RenderPipelines.Universal.Runtime",
+        "R3"
     ],
-    "includePlatforms": [
-        "Editor"
-    ],
+    "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,
