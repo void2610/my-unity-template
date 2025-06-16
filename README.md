@@ -137,9 +137,10 @@ public class PlayerController : MonoBehaviour
 
 ## 📋 依存関係のインストール手順
 
-### 自動インストール
+### 自動インストール（推奨）
 1. **Tools > Unity Template > Install Dependencies** を実行
-2. NuGetForUnityとR3 Unityモジュールが自動でインストールされます
+2. テンプレートmanifest.jsonに基づいて必要なパッケージが自動判定・インストールされます
+3. 既にインストール済みのパッケージはスキップされます
 
 ### 手動でR3コアモジュールをインストール
 1. **Window > NuGetForUnity** を開く
@@ -149,6 +150,26 @@ public class PlayerController : MonoBehaviour
 5. Unityを再起動
 
 これでR3リアクティブプログラミングが利用可能になります！
+
+## ⚙️ 依存関係管理（manifest.json）
+
+このテンプレートでは、`Editor/Resources/template-manifest.json`で依存関係を管理しています。
+
+### 含まれるパッケージ
+- **Unity 2D関連**: Animation, Pixel Perfect, PSD Importer, Sprite Shape, Tilemap
+- **開発支援**: Addressables, Burst, Collections, Mathematics
+- **UI/入力**: Input System, TextMesh Pro, URP, Visual Scripting
+- **外部ライブラリ**: NuGetForUnity, R3 Unity Module
+- **開発ツール**: Performance Profile Analyzer, Test Framework
+
+### カスタマイズ方法
+既存プロジェクトの依存関係を使用したい場合：
+
+1. 既存プロジェクトの`Packages/manifest.json`をコピー
+2. `Editor/Resources/template-manifest.json`として保存
+3. パッケージを再ビルド
+
+これにより、既存プロジェクトと同じ依存関係セットを新しいプロジェクトに適用できます。
 
 ## 🤝 コントリビューション
 

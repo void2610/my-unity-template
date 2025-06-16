@@ -3,9 +3,19 @@ using UnityEditor;
 using UnityEditor.PackageManager;
 using UnityEditor.PackageManager.Requests;
 using System.IO;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Void2610.UnityTemplate.Editor
 {
+    [System.Serializable]
+    public class ManifestData
+    {
+        public Dictionary<string, string> dependencies = new();
+        public string[] scopedRegistries = new string[0];
+        public string[] testables = new string[0];
+    }
+
     /// <summary>
     /// Editor menu items for the Unity Template
     /// </summary>
@@ -28,17 +38,36 @@ namespace Void2610.UnityTemplate.Editor
                 return;
             }
 
+            // Load template manifest
+            var templateManifest = LoadTemplateManifest();
+            if (templateManifest == null)
+            {
+                EditorUtility.DisplayDialog("エラー", 
+                    "テンプレートマニフェストの読み込みに失敗しました。", "OK");
+                return;
+            }
+
+            // Count packages to install
+            var currentManifest = LoadCurrentManifest();
+            var packagesToInstall = GetPackagesToInstall(templateManifest, currentManifest);
+
+            if (packagesToInstall.Count == 0)
+            {
+                EditorUtility.DisplayDialog("依存関係", 
+                    "すべての依存関係は既にインストール済みです。", "OK");
+                return;
+            }
+
             bool proceed = EditorUtility.DisplayDialog("依存関係のインストール", 
-                "以下のパッケージをインストールします:\n\n" +
-                "• R3 (Unity用リアクティブ拡張)\n" +
-                "• NuGetForUnity (NuGetパッケージ管理)\n" +
-                "• 必要なUnityパッケージ\n\n" +
-                "この処理には時間がかかる場合があります。\n続行しますか？", 
+                $"以下の{packagesToInstall.Count}個のパッケージをインストールします:\n\n" +
+                string.Join("\n", packagesToInstall.Take(5).Select(p => $"• {GetPackageDisplayName(p.Key)}")) +
+                (packagesToInstall.Count > 5 ? $"\n...他{packagesToInstall.Count - 5}個" : "") +
+                "\n\nこの処理には時間がかかる場合があります。\n続行しますか？", 
                 "インストール", "キャンセル");
 
             if (!proceed) return;
 
-            StartDependencyInstallation();
+            StartDependencyInstallation(packagesToInstall);
         }
         
         
@@ -212,24 +241,96 @@ namespace Void2610.UnityTemplate.Editor
         }
         
         
-        private static void StartDependencyInstallation()
+        private static ManifestData LoadTemplateManifest()
+        {
+            var templateAsset = Resources.Load<TextAsset>("template-manifest");
+            if (templateAsset == null)
+            {
+                Debug.LogError("template-manifest.json が見つかりません");
+                return null;
+            }
+
+            try
+            {
+                return JsonUtility.FromJson<ManifestData>(templateAsset.text);
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"template-manifest.json の解析に失敗しました: {e.Message}");
+                return null;
+            }
+        }
+
+        private static ManifestData LoadCurrentManifest()
+        {
+            var manifestPath = "Packages/manifest.json";
+            if (!File.Exists(manifestPath))
+            {
+                return new ManifestData();
+            }
+
+            try
+            {
+                var manifestText = File.ReadAllText(manifestPath);
+                return JsonUtility.FromJson<ManifestData>(manifestText);
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogWarning($"現在のmanifest.jsonの読み込みに失敗しました: {e.Message}");
+                return new ManifestData();
+            }
+        }
+
+        private static Dictionary<string, string> GetPackagesToInstall(ManifestData templateManifest, ManifestData currentManifest)
+        {
+            var packagesToInstall = new Dictionary<string, string>();
+
+            foreach (var package in templateManifest.dependencies)
+            {
+                // 既にインストール済みかチェック
+                if (!currentManifest.dependencies.ContainsKey(package.Key))
+                {
+                    packagesToInstall.Add(package.Key, package.Value);
+                }
+            }
+
+            return packagesToInstall;
+        }
+
+        private static string GetPackageDisplayName(string packageId)
+        {
+            if (packageId.Contains("github.com"))
+            {
+                if (packageId.Contains("NuGetForUnity"))
+                    return "NuGetForUnity";
+                if (packageId.Contains("R3"))
+                    return "R3 Unity";
+            }
+            
+            return packageId.Replace("com.unity.", "").Replace("com.", "");
+        }
+
+        private static void StartDependencyInstallation(Dictionary<string, string> packagesToInstall)
         {
             isInstallingPackages = true;
             
-            // パッケージのインストール順序（重要：NuGetForUnityを最初にインストール）
-            var packagesToInstall = new[]
-            {
-                "https://github.com/GlitchEnzo/NuGetForUnity.git?path=/src/NuGetForUnity",
-                "https://github.com/Cysharp/R3.git?path=src/R3.Unity/Assets/R3.Unity"
-            };
-            
             packageQueue.Clear();
-            foreach (var package in packagesToInstall)
+            
+            // NuGetForUnityを最初にインストール（重要）
+            var nugetPackage = packagesToInstall.FirstOrDefault(p => p.Key.Contains("NuGetForUnity"));
+            if (!nugetPackage.Equals(default(KeyValuePair<string, string>)))
             {
-                packageQueue.Enqueue(package);
+                packageQueue.Enqueue(nugetPackage.Key);
+                packagesToInstall.Remove(nugetPackage.Key);
             }
             
-            Debug.Log("依存関係のインストールを開始します...");
+            // 残りのパッケージをキューに追加
+            foreach (var package in packagesToInstall)
+            {
+                packageQueue.Enqueue(package.Key);
+            }
+            
+            Debug.Log($"依存関係のインストールを開始します... ({packageQueue.Count}個のパッケージ)");
             EditorUtility.DisplayProgressBar("依存関係インストール", "インストール開始...", 0f);
             
             InstallNextPackage();
@@ -256,15 +357,17 @@ namespace Void2610.UnityTemplate.Editor
                 return;
             }
             
-            var packageUrl = packageQueue.Dequeue();
-            var packageName = GetPackageNameFromUrl(packageUrl);
-            var progress = 1f - (packageQueue.Count + 1) / 2f;
+            var packageId = packageQueue.Dequeue();
+            var packageName = GetPackageDisplayName(packageId);
+            var totalPackages = packageQueue.Count + 1;
+            var currentIndex = totalPackages - packageQueue.Count;
+            var progress = (float)currentIndex / totalPackages;
             
             EditorUtility.DisplayProgressBar("依存関係インストール", 
-                $"インストール中: {packageName}", progress);
+                $"インストール中: {packageName} ({currentIndex}/{totalPackages})", progress);
             
-            Debug.Log($"パッケージをインストール中: {packageName}");
-            currentAddRequest = Client.Add(packageUrl);
+            Debug.Log($"パッケージをインストール中: {packageName} ({packageId})");
+            currentAddRequest = Client.Add(packageId);
             EditorApplication.update += PackageInstallProgress;
         }
         
@@ -299,14 +402,6 @@ namespace Void2610.UnityTemplate.Editor
             }
         }
         
-        private static string GetPackageNameFromUrl(string url)
-        {
-            if (url.Contains("NuGetForUnity"))
-                return "NuGetForUnity";
-            if (url.Contains("R3"))
-                return "R3 Unity";
-            return "Unknown Package";
-        }
         
         private static void ShowPostInstallInstructions()
         {
