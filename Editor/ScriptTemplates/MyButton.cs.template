@@ -6,75 +6,72 @@ namespace Void2610.UnityTemplate
 {
     /// <summary>
     /// 拡張Buttonコンポーネント
-    /// interactableがfalseの状態でもナビゲーション選択を可能にする
+    /// 独自の使用可否状態（IsAvailable）を持ち、常に選択可能でありながら
+    /// 見た目だけDisabled状態にできる
     /// </summary>
     public class MyButton : Button
     {
+        private bool _isAvailable = true;
+        private bool _forceDisabledVisual = false;
+
         /// <summary>
-        /// 選択時の処理（ナビゲーションで選択された時）
-        /// interactableがfalseでも選択を許可
+        /// 独自の使用可否（interactableとは別に制御）
         /// </summary>
-        public override void OnSelect(BaseEventData eventData)
+        public bool IsAvailable
         {
-            // interactableの値に関係なく選択を許可
-            if (eventData.selectedObject == gameObject)
+            get => _isAvailable;
+            set
             {
-                base.OnSelect(eventData);
+                if (_isAvailable == value) return;
+                _isAvailable = value;
+                UpdateVisualState();
             }
         }
 
-        /// <summary>
-        /// ナビゲーション移動時の処理
-        /// interactableがfalseでも移動を許可
-        /// </summary>
-        public override void OnMove(AxisEventData eventData)
+        protected override void Awake()
         {
-            // interactableの値に関係なく移動を許可
-            base.OnMove(eventData);
+            base.Awake();
+            UpdateVisualState();
         }
 
-        /// <summary>
-        /// キーボード/コントローラーでの決定入力処理
-        /// interactableがtrueの場合のみ実行
-        /// </summary>
         public override void OnSubmit(BaseEventData eventData)
         {
-            if (!interactable) return;
+            if (!IsAvailable) return;
             base.OnSubmit(eventData);
         }
 
-        /// <summary>
-        /// マウスクリック処理
-        /// interactableがtrueの場合のみ実行
-        /// </summary>
         public override void OnPointerClick(PointerEventData eventData)
         {
-            if (!interactable) return;
+            if (!IsAvailable) return;
             base.OnPointerClick(eventData);
         }
 
-        /// <summary>
-        /// マウスホバー時の処理
-        /// interactableがfalseでも選択状態に変更
-        /// </summary>
-        public override void OnPointerEnter(PointerEventData eventData)
+        public override void OnSelect(BaseEventData eventData)
         {
-            base.OnPointerEnter(eventData);
-            
-            // interactableがfalseでもホバー時に選択状態にする
-            if (!interactable && IsInteractable())
-            {
-                Select();
-            }
+            base.OnSelect(eventData);
         }
 
         /// <summary>
-        /// ボタンが選択可能かどうかを判定
-        /// （Selectableクラスの内部メソッドの代替）
+        /// 見た目を更新する
         /// </summary>
-        protected virtual bool IsInteractable()
+        private void UpdateVisualState()
         {
-            return gameObject.activeInHierarchy;
+            base.interactable = true;
+
+            _forceDisabledVisual = !IsAvailable;
+            var state = _forceDisabledVisual ? SelectionState.Disabled : SelectionState.Normal;
+            DoStateTransition(state, true);
+        }
+
+        protected override void DoStateTransition(SelectionState state, bool instant)
+        {
+            if (_forceDisabledVisual)
+            {
+                base.DoStateTransition(SelectionState.Disabled, instant);
+                return;
+            }
+
+            base.DoStateTransition(state, instant);
         }
     }
 }
