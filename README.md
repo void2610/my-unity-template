@@ -170,7 +170,7 @@ public class PlayerController : MonoBehaviour
 
 テンプレートの依存関係をカスタマイズする場合：
 
-1. `Editor/Resources/template-manifest.json`を編集
+1. `Editor/template-manifest.json`を編集
 2. `packages`配列でUnityパッケージを指定
 3. `gitPackages`配列でGitパッケージを指定
 4. 変更をコミット・プッシュ

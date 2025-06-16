@@ -181,6 +181,19 @@ namespace Void2610.UnityTemplate.Editor
             return !string.IsNullOrEmpty(guid);
         }
         
+        private static string GetPackagePath()
+        {
+            var scriptFiles = AssetDatabase.FindAssets("TemplateMenuItems t:Script");
+            if (scriptFiles.Length == 0)
+            {
+                Debug.LogError("TemplateMenuItems スクリプトが見つかりません");
+                return null;
+            }
+            
+            var scriptPath = AssetDatabase.GUIDToAssetPath(scriptFiles[0]);
+            return Path.GetDirectoryName(scriptPath);
+        }
+        
         private static int CopyUtilityScripts()
         {
             var targetPath = "Assets/Scripts/Utils";
@@ -190,29 +203,34 @@ namespace Void2610.UnityTemplate.Editor
             
             var scriptTemplates = new[] 
             { 
-                ("GameManager.cs", "ScriptTemplates/GameManager.cs"),
-                ("InputHandler.cs", "ScriptTemplates/InputHandler.cs")
+                ("GameManager.cs", "GameManager.cs.txt"),
+                ("InputHandler.cs", "InputHandler.cs.txt")
             };
             int copiedCount = 0;
             
-            foreach (var (fileName, resourcePath) in scriptTemplates)
+            var packagePath = GetPackagePath();
+            if (packagePath == null) return 0;
+            
+            var templatesPath = Path.Combine(packagePath, "ScriptTemplates");
+            
+            foreach (var (fileName, templateFileName) in scriptTemplates)
             {
                 var destPath = $"{targetPath}/{fileName}";
                 
                 // Check if destination doesn't exist
                 if (!File.Exists(destPath))
                 {
-                    // Load template from Resources
-                    var templateAsset = Resources.Load<TextAsset>(resourcePath);
-                    if (templateAsset != null)
+                    var templatePath = Path.Combine(templatesPath, templateFileName);
+                    if (File.Exists(templatePath))
                     {
-                        File.WriteAllText(destPath, templateAsset.text);
+                        var templateContent = File.ReadAllText(templatePath);
+                        File.WriteAllText(destPath, templateContent);
                         copiedCount++;
                         Debug.Log($"テンプレートからスクリプトをコピーしました: {fileName}");
                     }
                     else
                     {
-                        Debug.LogWarning($"テンプレート未発見: {resourcePath}");
+                        Debug.LogWarning($"テンプレート未発見: {templatePath}");
                     }
                 }
             }
@@ -222,16 +240,21 @@ namespace Void2610.UnityTemplate.Editor
         
         private static TemplateManifestData LoadTemplateManifest()
         {
-            var templateAsset = Resources.Load<TextAsset>("template-manifest");
-            if (templateAsset == null)
+            var packagePath = GetPackagePath();
+            if (packagePath == null) return null;
+            
+            var manifestPath = Path.Combine(packagePath, "template-manifest.json");
+            
+            if (!File.Exists(manifestPath))
             {
-                Debug.LogError("template-manifest.json が見つかりません");
+                Debug.LogError($"template-manifest.json が見つかりません: {manifestPath}");
                 return null;
             }
 
             try
             {
-                return JsonUtility.FromJson<TemplateManifestData>(templateAsset.text);
+                var manifestText = File.ReadAllText(manifestPath);
+                return JsonUtility.FromJson<TemplateManifestData>(manifestText);
             }
             catch (System.Exception e)
             {
