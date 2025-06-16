@@ -251,8 +251,6 @@ namespace Void2610.UnityTemplate.Editor
             
             var scriptTemplates = new[] 
             { 
-                ("GameManager.cs", "GameManager.cs.template"),
-                ("InputHandler.cs", "InputHandler.cs.template"),
                 ("SingletonMonoBehaviour.cs", "SingletonMonoBehaviour.cs.template"),
                 ("SerializableDictionary.cs", "SerializableDictionary.cs.template"),
                 ("CameraAspectRatioHandler.cs", "CameraAspectRatioHandler.cs.template"),

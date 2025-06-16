@@ -19,7 +19,7 @@ namespace Void2610.UnityTemplate
                     return _instance;
 
                 // シーン内の既存インスタンスを検索
-                _instance = FindObjectOfType<T>();
+                _instance = FindFirstObjectByType<T>();
                 if (_instance != null)
                     return _instance;
 
