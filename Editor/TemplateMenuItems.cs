@@ -317,39 +317,60 @@ namespace Void2610.UnityTemplate.Editor
             // Gitパッケージ
             foreach (var gitPackage in templateManifest.gitPackages)
             {
-                // Git URLは完全マッチでなくても、同じリポジトリがあればスキップ
+                // より厳密な重複チェック：完全なgit URLまたは同じパスを持つパッケージのみスキップ
                 var isAlreadyInstalled = currentManifest.dependencies.Keys.Any(key => 
-                    key.Contains("github.com") && IsFromSameGitRepo(key, gitPackage));
+                    key.Contains("github.com") && IsSameGitPackage(key, gitPackage));
+                
+                Debug.Log($"Checking git package: {gitPackage}, already installed: {isAlreadyInstalled}");
                 
                 if (!isAlreadyInstalled)
                 {
                     packagesToInstall.Add(gitPackage);
+                }
+                else
+                {
+                    Debug.Log($"Skipping {gitPackage} - already installed");
                 }
             }
 
             return packagesToInstall;
         }
 
-        private static bool IsFromSameGitRepo(string installedUrl, string targetUrl)
+        private static bool IsSameGitPackage(string installedUrl, string targetUrl)
         {
             try
             {
-                // GitHubリポジトリ名を抽出して比較
-                var installedRepo = ExtractGitHubRepo(installedUrl);
-                var targetRepo = ExtractGitHubRepo(targetUrl);
-                return installedRepo == targetRepo;
+                // パッケージの完全なパスまで含めて比較
+                var installedPath = ExtractGitPackagePath(installedUrl);
+                var targetPath = ExtractGitPackagePath(targetUrl);
+                
+                Debug.Log($"Comparing git packages: installed='{installedPath}' vs target='{targetPath}'");
+                
+                return installedPath == targetPath;
             }
-            catch
+            catch (System.Exception e)
             {
+                Debug.LogWarning($"Error comparing git packages: {e.Message}");
                 return false;
             }
         }
 
-        private static string ExtractGitHubRepo(string gitUrl)
+        private static string ExtractGitPackagePath(string gitUrl)
         {
-            // "https://github.com/owner/repo.git" から "owner/repo" を抽出
-            var match = Regex.Match(gitUrl, @"github\.com/([^/]+/[^/\?\.]+)");
-            return match.Success ? match.Groups[1].Value : gitUrl;
+            // "https://github.com/owner/repo.git?path=/specific/path" から "owner/repo/specific/path" を抽出
+            var repoMatch = Regex.Match(gitUrl, @"github\.com/([^/]+/[^/\?\.]+)");
+            if (!repoMatch.Success) return gitUrl;
+            
+            var repo = repoMatch.Groups[1].Value;
+            
+            var pathMatch = Regex.Match(gitUrl, @"path=([^&]+)");
+            if (pathMatch.Success)
+            {
+                var path = pathMatch.Groups[1].Value.TrimStart('/');
+                return $"{repo}/{path}";
+            }
+            
+            return repo;
         }
 
         private static string GetPackageDisplayName(string packageId)
