@@ -148,6 +148,10 @@ namespace Void2610.UnityTemplate.Editor
             if (createdCount > 0 || copiedScripts > 0)
             {
                 message += "Projectウィンドウで確認してください。";
+                if (copiedScripts > 0)
+                {
+                    message += "\n\n注意: スクリプトはR3ライブラリを使用します。\n'Install Dependencies'を実行してください。";
+                }
                 Debug.Log($"フォルダ構造作成完了: {message}");
                 EditorUtility.DisplayDialog("フォルダ構造作成完了", message, "OK");
             }
@@ -182,27 +186,37 @@ namespace Void2610.UnityTemplate.Editor
         
         private static int CopyUtilityScripts()
         {
-            var packagePath = "Packages/com.void2610.unity-template/Runtime";
             var targetPath = "Assets/Scripts/Utils";
             
             // Ensure target directory exists
             CreateFolderRecursively(targetPath);
             
-            var scriptFiles = new[] { "GameManager.cs", "InputHandler.cs" };
+            var scriptTemplates = new[] 
+            { 
+                ("GameManager.cs", "ScriptTemplates/GameManager.cs"),
+                ("InputHandler.cs", "ScriptTemplates/InputHandler.cs")
+            };
             int copiedCount = 0;
             
-            foreach (var scriptFile in scriptFiles)
+            foreach (var (fileName, resourcePath) in scriptTemplates)
             {
-                var sourcePath = $"{packagePath}/{scriptFile}";
-                var destPath = $"{targetPath}/{scriptFile}";
+                var destPath = $"{targetPath}/{fileName}";
                 
-                // Check if source exists and destination doesn't exist
-                var sourceAsset = AssetDatabase.LoadAssetAtPath<TextAsset>(sourcePath);
-                if (sourceAsset != null && !File.Exists(destPath))
+                // Check if destination doesn't exist
+                if (!File.Exists(destPath))
                 {
-                    var scriptContent = sourceAsset.text;
-                    File.WriteAllText(destPath, scriptContent);
-                    copiedCount++;
+                    // Load template from Resources
+                    var templateAsset = Resources.Load<TextAsset>(resourcePath);
+                    if (templateAsset != null)
+                    {
+                        File.WriteAllText(destPath, templateAsset.text);
+                        copiedCount++;
+                        Debug.Log($"テンプレートからスクリプトをコピーしました: {fileName}");
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"テンプレートファイルが見つかりません: {resourcePath}");
+                    }
                 }
             }
             
@@ -216,203 +230,50 @@ namespace Void2610.UnityTemplate.Editor
             var scriptsPath = "Assets/Scripts/Utils";
             CreateFolderRecursively(scriptsPath);
             
-            // Try to copy from package first, then generate if needed
-            int copiedCount = CopyUtilityScripts();
+            // Check if scripts already exist
+            var gameManagerPath = Path.Combine(scriptsPath, "GameManager.cs");
+            var inputHandlerPath = Path.Combine(scriptsPath, "InputHandler.cs");
             
-            if (copiedCount == 0)
+            bool gameManagerExists = File.Exists(gameManagerPath);
+            bool inputHandlerExists = File.Exists(inputHandlerPath);
+            
+            if (gameManagerExists && inputHandlerExists)
             {
-                // Check if scripts already exist
-                var gameManagerPath = Path.Combine(scriptsPath, "GameManager.cs");
-                var inputHandlerPath = Path.Combine(scriptsPath, "InputHandler.cs");
+                bool overwrite = EditorUtility.DisplayDialog("スクリプトが既に存在します", 
+                    "GameManager.cs と InputHandler.cs が既に存在します。\n上書きしますか？", 
+                    "上書き", "キャンセル");
                 
-                bool gameManagerExists = File.Exists(gameManagerPath);
-                bool inputHandlerExists = File.Exists(inputHandlerPath);
-                
-                if (gameManagerExists && inputHandlerExists)
+                if (!overwrite)
                 {
-                    EditorUtility.DisplayDialog("スクリプトが既に存在します", 
-                        "GameManager.cs と InputHandler.cs が既に存在します。", "OK");
                     return;
                 }
                 
-                // Generate scripts if package copy failed
-                CreateGameManagerScript(scriptsPath);
-                CreateInputHandlerScript(scriptsPath);
-                copiedCount = 2;
+                // Delete existing files for overwrite
+                if (gameManagerExists) File.Delete(gameManagerPath);
+                if (inputHandlerExists) File.Delete(inputHandlerPath);
             }
+            
+            // Copy from templates
+            int copiedCount = CopyUtilityScripts();
             
             AssetDatabase.Refresh();
             
-            Debug.Log("R3とInput Systemの統合例スクリプトを作成しました");
-            EditorUtility.DisplayDialog("サンプルスクリプト作成完了", 
-                $"{copiedCount}個のスクリプトを作成しました:\n" +
-                "GameManager.cs と InputHandler.cs\n\n" +
-                "これらはR3リアクティブプログラミングと\nInput Systemの使用例です。", "OK");
-        }
-        
-        private static void CreateGameManagerScript(string path)
-        {
-            var gameManagerContent = @"using UnityEngine;
-using R3;
-using System;
-
-namespace Void2610.UnityTemplate
-{
-    /// <summary>
-    /// Example GameManager demonstrating R3 reactive extensions usage
-    /// </summary>
-    public class GameManager : MonoBehaviour
-    {
-        [Header(""Game State"")]
-        [SerializeField] private bool isGameActive = false;
-        
-        // Reactive properties using R3
-        private readonly ReactiveProperty<int> score = new(0);
-        private readonly ReactiveProperty<bool> isPaused = new(false);
-        private readonly ReactiveProperty<float> timeRemaining = new(60f);
-        
-        // Public observables
-        public ReadOnlyReactiveProperty<int> Score => score;
-        public ReadOnlyReactiveProperty<bool> IsPaused => isPaused;
-        public ReadOnlyReactiveProperty<float> TimeRemaining => timeRemaining;
-        
-        // Events
-        public readonly Subject<Unit> OnGameStart = new();
-        public readonly Subject<Unit> OnGameEnd = new();
-        
-        private void Start()
-        {
-            SetupReactiveBindings();
-        }
-        
-        private void SetupReactiveBindings()
-        {
-            // Example: React to score changes
-            score.Subscribe(newScore => 
+            if (copiedCount > 0)
             {
-                Debug.Log($""Score updated: {newScore}"");
-                // Update UI, check for achievements, etc.
-            }).AddTo(this);
-            
-            // Example: React to pause state changes
-            isPaused.Subscribe(paused => 
+                Debug.Log("R3とInput Systemの統合例スクリプトを作成しました");
+                EditorUtility.DisplayDialog("サンプルスクリプト作成完了", 
+                    $"{copiedCount}個のスクリプトを作成しました:\n" +
+                    "GameManager.cs と InputHandler.cs\n\n" +
+                    "注意: R3ライブラリが必要です。\n" +
+                    "'Install Dependencies'を先に実行してください。", "OK");
+            }
+            else
             {
-                Time.timeScale = paused ? 0f : 1f;
-                Debug.Log($""Game {(paused ? ""paused"" : ""resumed"")}"");
-            }).AddTo(this);
+                EditorUtility.DisplayDialog("エラー", 
+                    "スクリプトテンプレートの読み込みに失敗しました。", "OK");
+            }
         }
         
-        public void StartGame()
-        {
-            isGameActive = true;
-            score.Value = 0;
-            timeRemaining.Value = 60f;
-            isPaused.Value = false;
-            OnGameStart.OnNext(Unit.Default);
-        }
-        
-        public void EndGame()
-        {
-            isGameActive = false;
-            OnGameEnd.OnNext(Unit.Default);
-        }
-        
-        public void TogglePause()
-        {
-            isPaused.Value = !isPaused.Value;
-        }
-        
-        public void AddScore(int points)
-        {
-            score.Value += points;
-        }
-        
-        private void OnDestroy()
-        {
-            OnGameStart?.Dispose();
-            OnGameEnd?.Dispose();
-        }
-    }
-}";
-            
-            File.WriteAllText(Path.Combine(path, "GameManager.cs"), gameManagerContent);
-        }
-        
-        private static void CreateInputHandlerScript(string path)
-        {
-            var inputHandlerContent = @"using UnityEngine;
-using UnityEngine.InputSystem;
-using R3;
-
-namespace Void2610.UnityTemplate
-{
-    /// <summary>
-    /// Example input handler using Unity Input System and R3
-    /// Requires InputActions asset to be created first
-    /// </summary>
-    public class InputHandler : MonoBehaviour
-    {
-        [Header(""Input Settings"")]
-        [SerializeField] private float movementSensitivity = 1f;
-        
-        // Reactive streams for input
-        private readonly Subject<Vector2> moveInput = new();
-        private readonly Subject<Unit> jumpInput = new();
-        private readonly Subject<Unit> interactInput = new();
-        
-        // Public observables
-        public Observable<Vector2> MoveInput => moveInput;
-        public Observable<Unit> JumpInput => jumpInput;
-        public Observable<Unit> InteractInput => interactInput;
-        
-        private void Start()
-        {
-            SetupInputBindings();
-        }
-        
-        private void SetupInputBindings()
-        {
-            // Example: React to movement input
-            moveInput.Subscribe(movement => 
-            {
-                var scaledMovement = movement * movementSensitivity;
-                Debug.Log($""Movement: {scaledMovement}"");
-            }).AddTo(this);
-            
-            // Example: React to jump input
-            jumpInput.Subscribe(_ => 
-            {
-                Debug.Log(""Jump performed!"");
-            }).AddTo(this);
-        }
-        
-        // Call these methods from Unity Events or Input System callbacks
-        public void OnMove(Vector2 movement)
-        {
-            moveInput.OnNext(movement);
-        }
-        
-        public void OnJump()
-        {
-            jumpInput.OnNext(Unit.Default);
-        }
-        
-        public void OnInteract()
-        {
-            interactInput.OnNext(Unit.Default);
-        }
-        
-        private void OnDestroy()
-        {
-            moveInput?.Dispose();
-            jumpInput?.Dispose();
-            interactInput?.Dispose();
-        }
-    }
-}";
-            
-            File.WriteAllText(Path.Combine(path, "InputHandler.cs"), inputHandlerContent);
-        }
         
         private static void StartDependencyInstallation()
         {
