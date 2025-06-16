@@ -129,34 +129,40 @@ namespace Void2610.UnityTemplate.Editor
                 }
             }
             
-            // Copy utility scripts from package
-            int copiedScripts = CopyUtilityScripts();
-            
             AssetDatabase.Refresh();
             
-            var message = "";
             if (createdCount > 0)
             {
-                message += $"{createdCount}個のフォルダを作成しました。\n";
-            }
-            if (copiedScripts > 0)
-            {
-                message += $"{copiedScripts}個のユーティリティスクリプトをコピーしました。\n";
-            }
-            
-            if (createdCount > 0 || copiedScripts > 0)
-            {
-                message += "Projectウィンドウで確認してください。";
-                if (copiedScripts > 0)
-                {
-                    message += "\n\n注意: R3ライブラリが必要です。先に'Install Dependencies'を実行してください。";
-                }
-                EditorUtility.DisplayDialog("フォルダ構造作成完了", message, "OK");
+                EditorUtility.DisplayDialog("フォルダ構造作成完了", 
+                    $"{createdCount}個のフォルダを作成しました。\nProjectウィンドウで確認してください。", 
+                    "OK");
             }
             else
             {
                 EditorUtility.DisplayDialog("フォルダ構造", 
-                    "フォルダ構造とスクリプトは既に存在しています。", "OK");
+                    "フォルダ構造は既に存在しています。", "OK");
+            }
+        }
+        
+        [MenuItem(MENU_ROOT + "Copy Utility Scripts")]
+        public static void CopyUtilityScriptsMenuItem()
+        {
+            int copiedScripts = CopyUtilityScripts();
+            
+            AssetDatabase.Refresh();
+            
+            if (copiedScripts > 0)
+            {
+                EditorUtility.DisplayDialog("スクリプトコピー完了", 
+                    $"{copiedScripts}個のユーティリティスクリプトをコピーしました。\n" +
+                    "Projectウィンドウで確認してください。\n\n" +
+                    "注意: R3ライブラリが必要です。先に'Install Dependencies'を実行してください。", 
+                    "OK");
+            }
+            else
+            {
+                EditorUtility.DisplayDialog("スクリプトコピー", 
+                    "ユーティリティスクリプトは既に存在しています。", "OK");
             }
         }
         
@@ -203,8 +209,8 @@ namespace Void2610.UnityTemplate.Editor
             
             var scriptTemplates = new[] 
             { 
-                ("GameManager.cs", "GameManager.cs.txt"),
-                ("InputHandler.cs", "InputHandler.cs.txt")
+                ("GameManager.cs", "GameManager.cs.template"),
+                ("InputHandler.cs", "InputHandler.cs.template")
             };
             int copiedCount = 0;
             
@@ -226,7 +232,7 @@ namespace Void2610.UnityTemplate.Editor
                         var templateContent = File.ReadAllText(templatePath);
                         File.WriteAllText(destPath, templateContent);
                         copiedCount++;
-                        Debug.Log($"テンプレートからスクリプトをコピーしました: {fileName}");
+                        Debug.Log($"テンプレートからスクリプトをコピーしました: {templateFileName} → {fileName}");
                     }
                     else
                     {
