@@ -41,7 +41,6 @@ namespace Void2610.UnityTemplate.Editor
     {
         private const string MENU_ROOT = "Tools/Unity Template/";
         private const string PREF_KEY_INSTALL_STATE = "UnityTemplate_InstallState";
-        private const string PREF_KEY_INSTALL_QUEUE = "UnityTemplate_InstallQueue";
         
         private static AddRequest currentAddRequest;
         private static System.Collections.Generic.Queue<string> packageQueue = new();
@@ -71,8 +70,6 @@ namespace Void2610.UnityTemplate.Editor
                 return;
             }
 
-            Debug.Log("=== Dependencies Installation Started ===");
-
             // Load template manifest
             var templateManifest = LoadTemplateManifest();
             if (templateManifest == null)
@@ -83,24 +80,16 @@ namespace Void2610.UnityTemplate.Editor
                 return;
             }
 
-            Debug.Log($"Template manifest loaded: {templateManifest.packages.Length} packages, {templateManifest.gitPackages.Length} git packages");
-
             // Count packages to install
             var currentManifest = LoadCurrentManifest();
-            Debug.Log($"Current manifest loaded: {currentManifest.dependencies.Count} dependencies");
-
             var packagesToInstall = GetPackagesToInstall(templateManifest, currentManifest);
-            Debug.Log($"Packages to install: {packagesToInstall.Count}");
 
             if (packagesToInstall.Count == 0)
             {
-                Debug.Log("All dependencies already installed");
                 EditorUtility.DisplayDialog("依存関係", 
                     "すべての依存関係は既にインストール済みです。", "OK");
                 return;
             }
-
-            Debug.Log($"Packages to install: {string.Join(", ", packagesToInstall)}");
 
             bool proceed = EditorUtility.DisplayDialog("依存関係のインストール", 
                 $"以下の{packagesToInstall.Count}個のパッケージをインストールします:\n\n" +
@@ -160,14 +149,12 @@ namespace Void2610.UnityTemplate.Editor
                 message += "Projectウィンドウで確認してください。";
                 if (copiedScripts > 0)
                 {
-                    message += "\n\n注意: スクリプトはR3ライブラリを使用します。\n'Install Dependencies'を実行してください。";
+                    message += "\n\n注意: R3ライブラリが必要です。先に'Install Dependencies'を実行してください。";
                 }
-                Debug.Log($"フォルダ構造作成完了: {message}");
                 EditorUtility.DisplayDialog("フォルダ構造作成完了", message, "OK");
             }
             else
             {
-                Debug.Log("フォルダ構造とスクリプトは既に存在しています");
                 EditorUtility.DisplayDialog("フォルダ構造", 
                     "フォルダ構造とスクリプトは既に存在しています。", "OK");
             }
@@ -225,65 +212,13 @@ namespace Void2610.UnityTemplate.Editor
                     }
                     else
                     {
-                        Debug.LogWarning($"テンプレートファイルが見つかりません: {resourcePath}");
+                        Debug.LogWarning($"テンプレート未発見: {resourcePath}");
                     }
                 }
             }
             
             return copiedCount;
         }
-        
-        [MenuItem(MENU_ROOT + "Create Example Scripts")]
-        public static void CreateExampleScripts()
-        {
-            // Ensure Scripts/Utils folder exists
-            var scriptsPath = "Assets/Scripts/Utils";
-            CreateFolderRecursively(scriptsPath);
-            
-            // Check if scripts already exist
-            var gameManagerPath = Path.Combine(scriptsPath, "GameManager.cs");
-            var inputHandlerPath = Path.Combine(scriptsPath, "InputHandler.cs");
-            
-            bool gameManagerExists = File.Exists(gameManagerPath);
-            bool inputHandlerExists = File.Exists(inputHandlerPath);
-            
-            if (gameManagerExists && inputHandlerExists)
-            {
-                bool overwrite = EditorUtility.DisplayDialog("スクリプトが既に存在します", 
-                    "GameManager.cs と InputHandler.cs が既に存在します。\n上書きしますか？", 
-                    "上書き", "キャンセル");
-                
-                if (!overwrite)
-                {
-                    return;
-                }
-                
-                // Delete existing files for overwrite
-                if (gameManagerExists) File.Delete(gameManagerPath);
-                if (inputHandlerExists) File.Delete(inputHandlerPath);
-            }
-            
-            // Copy from templates
-            int copiedCount = CopyUtilityScripts();
-            
-            AssetDatabase.Refresh();
-            
-            if (copiedCount > 0)
-            {
-                Debug.Log("R3とInput Systemの統合例スクリプトを作成しました");
-                EditorUtility.DisplayDialog("サンプルスクリプト作成完了", 
-                    $"{copiedCount}個のスクリプトを作成しました:\n" +
-                    "GameManager.cs と InputHandler.cs\n\n" +
-                    "注意: R3ライブラリが必要です。\n" +
-                    "'Install Dependencies'を先に実行してください。", "OK");
-            }
-            else
-            {
-                EditorUtility.DisplayDialog("エラー", 
-                    "スクリプトテンプレートの読み込みに失敗しました。", "OK");
-            }
-        }
-        
         
         private static TemplateManifestData LoadTemplateManifest()
         {
@@ -346,7 +281,6 @@ namespace Void2610.UnityTemplate.Editor
                 // Unity 6以降で組み込みパッケージはスキップ
                 if (isUnity6OrNewer && unity6BuiltInPackages.Contains(packageId))
                 {
-                    Debug.Log($"スキップ: {packageId} はUnity 6で組み込みパッケージです");
                     continue;
                 }
                 
@@ -363,15 +297,9 @@ namespace Void2610.UnityTemplate.Editor
                 var isAlreadyInstalled = currentManifest.dependencies.Keys.Any(key => 
                     key.Contains("github.com") && IsSameGitPackage(key, gitPackage));
                 
-                Debug.Log($"Checking git package: {gitPackage}, already installed: {isAlreadyInstalled}");
-                
                 if (!isAlreadyInstalled)
                 {
                     packagesToInstall.Add(gitPackage);
-                }
-                else
-                {
-                    Debug.Log($"Skipping {gitPackage} - already installed");
                 }
             }
 
@@ -385,8 +313,6 @@ namespace Void2610.UnityTemplate.Editor
                 // パッケージの完全なパスまで含めて比較
                 var installedPath = ExtractGitPackagePath(installedUrl);
                 var targetPath = ExtractGitPackagePath(targetUrl);
-                
-                Debug.Log($"Comparing git packages: installed='{installedPath}' vs target='{targetPath}'");
                 
                 return installedPath == targetPath;
             }
@@ -430,8 +356,6 @@ namespace Void2610.UnityTemplate.Editor
 
         private static void StartDependencyInstallation(List<string> packagesToInstall)
         {
-            Debug.Log($"StartDependencyInstallation called with {packagesToInstall.Count} packages");
-            
             isInstallingPackages = true;
             skippedPackagesCount = 0; // リセット
             
@@ -441,25 +365,18 @@ namespace Void2610.UnityTemplate.Editor
             var nugetPackage = packagesToInstall.FirstOrDefault(p => p.Contains("NuGetForUnity"));
             if (!string.IsNullOrEmpty(nugetPackage))
             {
-                Debug.Log($"Found NuGetForUnity package: {nugetPackage}");
                 packageQueue.Enqueue(nugetPackage);
                 packagesToInstall.Remove(nugetPackage);
-            }
-            else
-            {
-                Debug.Log("No NuGetForUnity package found");
             }
             
             // 残りのパッケージをキューに追加
             foreach (var package in packagesToInstall)
             {
-                Debug.Log($"Adding package to queue: {package}");
                 packageQueue.Enqueue(package);
             }
             
             totalPackagesToInstall = packageQueue.Count;
             
-            Debug.Log($"Queue created with {packageQueue.Count} packages: {string.Join(", ", packageQueue)}");
             Debug.Log($"依存関係のインストールを開始します... ({packageQueue.Count}個のパッケージ)");
             
             // インストール状態を保存
@@ -474,8 +391,6 @@ namespace Void2610.UnityTemplate.Editor
         
         private static void InstallNextPackage()
         {
-            Debug.Log($"InstallNextPackage called. Queue count: {packageQueue.Count}");
-            
             if (packageQueue.Count == 0)
             {
                 // 全てのパッケージインストール完了
@@ -518,12 +433,9 @@ namespace Void2610.UnityTemplate.Editor
             EditorUtility.DisplayProgressBar("依存関係インストール", 
                 $"インストール中: {packageName} ({currentIndex}/{totalPackagesToInstall})", progress);
             
-            Debug.Log($"パッケージをインストール中: {packageName} ({packageId})");
-            Debug.Log($"Calling Client.Add with: {packageId}");
+            Debug.Log($"[{currentIndex}/{totalPackagesToInstall}] インストール中: {packageName}");
             
             currentAddRequest = Client.Add(packageId);
-            Debug.Log($"AddRequest created. Is null: {currentAddRequest == null}");
-            
             EditorApplication.update += PackageInstallProgress;
         }
         
@@ -536,19 +448,17 @@ namespace Void2610.UnityTemplate.Editor
                 return;
             }
             
-            Debug.Log($"PackageInstallProgress - IsCompleted: {currentAddRequest.IsCompleted}, Status: {currentAddRequest.Status}");
-            
             if (currentAddRequest.IsCompleted)
             {
                 EditorApplication.update -= PackageInstallProgress;
                 
                 if (currentAddRequest.Status == StatusCode.Success)
                 {
-                    Debug.Log($"パッケージインストール成功: {currentAddRequest.Result.displayName}");
+                    Debug.Log($"✓ インストール成功: {currentAddRequest.Result.displayName}");
                     
                     // 少し待ってから次のパッケージをインストール
                     EditorApplication.delayCall += () => {
-                        System.Threading.Thread.Sleep(1000); // 1秒待機
+                        System.Threading.Thread.Sleep(500); // 0.5秒待機
                         InstallNextPackage();
                     };
                 }
@@ -563,7 +473,7 @@ namespace Void2610.UnityTemplate.Editor
                     
                     if (isCompatibilityError)
                     {
-                        Debug.LogWarning($"パッケージ互換性の問題により、このパッケージをスキップします");
+                        Debug.LogWarning($"⚠ 互換性の問題によりスキップしました");
                         skippedPackagesCount++;
                         
                         // 次のパッケージのインストールを継続
@@ -593,15 +503,10 @@ namespace Void2610.UnityTemplate.Editor
         
         private static void ShowPostInstallInstructions()
         {
-            var message = "=== R3使用のための追加手順 ===\n\n" +
-                         "1. Window > NuGetForUnity を開く\n" +
-                         "2. 検索ボックスに 'R3' と入力\n" +
-                         "3. 'R3' パッケージを見つけてインストール\n" +
-                         "4. 'Microsoft.Bcl.AsyncInterfaces' もインストール\n" +
-                         "5. インストール完了後、Unityを再起動\n\n" +
-                         "これで Templates ツールが正常に動作します！";
-                         
-            Debug.Log(message);
+            Debug.Log("=== R3セットアップ手順 ===\n" +
+                     "1. Window > NuGetForUnity を開く\n" +
+                     "2. 'R3' を検索してインストール\n" +
+                     "3. Unityを再起動");
         }
         
         private static void RestoreInstallationStateAfterReload()
@@ -618,8 +523,7 @@ namespace Void2610.UnityTemplate.Editor
                 var state = JsonUtility.FromJson<InstallationState>(stateJson);
                 if (state != null && state.isInstalling && state.remainingPackages.Count > 0)
                 {
-                    Debug.Log("=== パッケージインストールを再開します ===");
-                    Debug.Log($"残りのパッケージ: {state.remainingPackages.Count}個");
+                    Debug.Log($"=== パッケージインストールを再開します（残り: {state.remainingPackages.Count}個）===");
                     
                     // キューを復元
                     packageQueue.Clear();
@@ -662,13 +566,10 @@ namespace Void2610.UnityTemplate.Editor
         private static void ClearInstallationState()
         {
             EditorPrefs.DeleteKey(PREF_KEY_INSTALL_STATE);
-            EditorPrefs.DeleteKey(PREF_KEY_INSTALL_QUEUE);
         }
         
         private static void CancelInstallation()
         {
-            Debug.Log("=== パッケージインストールをキャンセルしました ===");
-            
             isInstallingPackages = false;
             packageQueue.Clear();
             currentAddRequest = null;

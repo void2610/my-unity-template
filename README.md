@@ -1,19 +1,20 @@
 # Unity プロジェクトテンプレートパッケージ
 
 [![Unity Version](https://img.shields.io/badge/Unity-2022.3+-green.svg)](https://unity3d.com/get-unity/download)
+[![Unity 6 Compatible](https://img.shields.io/badge/Unity_6-Compatible-blue.svg)](https://unity.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-URP 2D、R3 リアクティブ拡張、Input System、整理されたプロジェクト構造を含む、高速ゲーム開発のための包括的なUnityプロジェクトテンプレートパッケージです。
+URP、R3 リアクティブ拡張、Input System、整理されたプロジェクト構造を含む、高速ゲーム開発のためのUnityプロジェクトテンプレートパッケージです。
 
 ## ✨ 機能
 
-- 🎨 **URP 2D パイプライン** - 2Dゲーム用に最適化されたUniversal Render Pipeline
-- 🎮 **Input System** - 事前設定されたアクションを持つモダンな入力処理
-- ⚡ **R3 リアクティブ拡張** - Unity用リアクティブプログラミング
-- 📝 **TextMesh Pro** - 強化されたテキストレンダリング
+- 🎨 **Universal Render Pipeline** - 最適化されたレンダリングパイプライン
+- 🎮 **Input System** - モダンな入力処理システム
+- ⚡ **R3 リアクティブ拡張** - Unity用リアクティブプログラミング（自動インストール）
+- 🔧 **NuGetForUnity** - .NETパッケージ管理（自動インストール）
 - 🗂️ **整理された構造** - スプライト、オーディオ、スクリプト用のクリーンなフォルダ構成
-- 🛠️ **エディタツール** - カスタムメニュー項目とユーティリティ
-- 📋 **シーンテンプレート** - 事前設定済みの2D URPシーンテンプレート
+- 🛠️ **自動セットアップ** - 依存関係の自動インストールとプロジェクト構築
+- 🚀 **Unity 6対応** - Unity 2022.3以降、Unity 6にも対応
 
 ## 📦 インストール
 
@@ -37,22 +38,33 @@ URP 2D、R3 リアクティブ拡張、Input System、整理されたプロジ�
 
 ## 🚀 クイックスタート
 
-### 1. テンプレートツールの使用
+### 1. 依存関係の自動インストール
 
-**Tools > Unity Template**メニューからテンプレートツールにアクセス:
+**Tools > Unity Template > Install Dependencies** を実行:
 
-- **Install Dependencies** - R3とNuGetForUnityを自動インストール
-- **Create Folder Structure** - 整理されたフォルダ階層を作成
-- **Create Example Scripts** - GameManagerとInputHandlerの例を生成
+- Unity パッケージ（URP、Input System等）を自動インストール
+- NuGetForUnity を自動インストール
+- R3 Unity モジュールを自動インストール
+- Unity 6では互換性のないパッケージは自動的にスキップ
 
-### 2. 開発開始
+### 2. プロジェクト構造の作成
 
-テンプレートツールは以下の実例スクリプトを生成します:
+**Tools > Unity Template > Create Folder Structure** を実行:
 
+- 整理されたフォルダ階層を自動作成
+- GameManagerとInputHandlerの例をコピー
+
+### 3. R3の最終セットアップ
+
+1. **Window > NuGetForUnity** を開く
+2. 「R3」を検索してインストール
+3. Unityを再起動
+
+### 4. 開発開始！
+
+生成されるサンプルスクリプト:
 - `GameManager.cs` - R3リアクティブプログラミングパターン
 - `InputHandler.cs` - Input SystemとR3の統合
-- 2D URPシーンの作成
-- アセット用の整理されたフォルダ構造
 
 ## 📁 パッケージ構造
 
@@ -69,14 +81,22 @@ URP 2D、R3 リアクティブ拡張、Input System、整理されたプロジ�
     └── com.void2610.unity-template.Tests.asmdef
 ```
 
-## 🛠️ 依存関係
+## 🛠️ 自動インストールされる依存関係
 
-このパッケージは以下を自動的に含みます:
+### Unity公式パッケージ
+- **Universal Render Pipeline** - レンダリングパイプライン
+- **Input System** - 入力処理システム
+- **Addressables** - アセット管理システム
+- **Visual Effect Graph** - ビジュアルエフェクト
+- **Localization** - 多言語対応
 
-- **Universal Render Pipeline** (com.unity.render-pipelines.universal)
-- **TextMesh Pro** (com.unity.textmeshpro)
-- **Input System** (com.unity.inputsystem)
-- **R3** (NuGet経由)
+### 外部パッケージ
+- **NuGetForUnity** - .NETパッケージマネージャー
+- **R3 Unity** - リアクティブプログラミングライブラリ
+
+### Unity 6での互換性
+- TextMeshPro、UGUIなど組み込みパッケージは自動的にスキップ
+- 互換性のないパッケージも自動スキップして継続
 
 ## 📖 使用例
 
@@ -128,36 +148,37 @@ public class PlayerController : MonoBehaviour
 
 ## 🚀 ワークフロー例
 
-1. **パッケージをインストール**
-2. **Tools > Unity Template > Install Dependencies** で依存関係をインストール
-   - NuGetForUnityとR3 Unityモジュールが自動インストール
-   - Window > NuGetForUnity からR3コアモジュールをインストール
-3. **Tools > Unity Template > Create Folder Structure** でフォルダ構造を作成
-4. 開発開始！
+1. **パッケージをインストール** (Unity Package Manager経由)
+2. **Tools > Unity Template > Install Dependencies** で依存関係を自動インストール
+3. **Tools > Unity Template > Create Folder Structure** でプロジェクト構造を作成
+4. **Window > NuGetForUnity** でR3をインストール
+5. **開発開始！**
 
-## 📋 依存関係のインストール手順
+## 🔧 トラブルシューティング
 
-### 自動インストール（推奨）
-1. **Tools > Unity Template > Install Dependencies** を実行
-2. テンプレートmanifest.jsonに基づいて必要なパッケージが自動判定・インストールされます
-3. 既にインストール済みのパッケージはスキップされます
+### インストール中にエラーが発生した場合
+- パッケージインストール中にエラーが発生しても、他のパッケージのインストールは継続されます
+- Unity 6で互換性のないパッケージは自動的にスキップされます
+- ドメインリロード後も自動的にインストールが再開されます
 
-### 手動でR3コアモジュールをインストール
-1. **Window > NuGetForUnity** を開く
-2. 検索ボックスに「**R3**」と入力
-3. **R3** パッケージをインストール
-4. **Microsoft.Bcl.AsyncInterfaces** もインストール（依存関係）
-5. Unityを再起動
+### キャンセルしたい場合
+- インストール中に再度 **Install Dependencies** を実行するとキャンセルオプションが表示されます
 
-これでR3リアクティブプログラミングが利用可能になります！
+## ⚙️ カスタマイズ
 
-## ⚙️ 依存関係管理
+### 依存関係のカスタマイズ
 
-既存プロジェクトの依存関係を使用したい場合：
+テンプレートの依存関係をカスタマイズする場合：
 
-1. 既存プロジェクトの`Packages/manifest.json`をコピー
-2. このリポジトリの`Editor/Resources/template-manifest.json`を更新
-3. Gitにコミット・プッシュ
+1. `Editor/Resources/template-manifest.json`を編集
+2. `packages`配列でUnityパッケージを指定
+3. `gitPackages`配列でGitパッケージを指定
+4. 変更をコミット・プッシュ
+
+### サポートされるUnityバージョン
+- Unity 2022.3以降
+- Unity 6に完全対応
+- 互換性のないパッケージは自動的にスキップ
 
 ## 🤝 コントリビューション
 
