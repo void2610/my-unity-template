@@ -116,7 +116,9 @@ namespace Void2610.UnityTemplate.Editor
                 "Assets/Audio/SE",
                 "Assets/Materials",
                 "Assets/Prefabs",
-                "Assets/ScriptableObjects"
+                "Assets/ScriptableObjects",
+                "Assets/Editor",
+                "Assets/Others"
             };
             
             int createdCount = 0;
@@ -163,6 +165,28 @@ namespace Void2610.UnityTemplate.Editor
             {
                 EditorUtility.DisplayDialog("スクリプトコピー", 
                     "ユーティリティスクリプトは既に存在しています。", "OK");
+            }
+        }
+        
+        [MenuItem(MENU_ROOT + "Copy Editor Scripts")]
+        public static void CopyEditorScriptsMenuItem()
+        {
+            int copiedScripts = CopyEditorScripts();
+            
+            AssetDatabase.Refresh();
+            
+            if (copiedScripts > 0)
+            {
+                EditorUtility.DisplayDialog("エディタスクリプトコピー完了", 
+                    $"{copiedScripts}個のエディタスクリプトをコピーしました。\n" +
+                    "Assets/Editorフォルダで確認してください。\n\n" +
+                    "注意: Unity Toolbar Extenderライブラリが必要です。先に'Install Dependencies'を実行してください。", 
+                    "OK");
+            }
+            else
+            {
+                EditorUtility.DisplayDialog("エディタスクリプトコピー", 
+                    "エディタスクリプトは既に存在しています。", "OK");
             }
         }
         
@@ -288,6 +312,49 @@ namespace Void2610.UnityTemplate.Editor
                     else
                     {
                         Debug.LogWarning($"テンプレート未発見: {templatePath}");
+                    }
+                }
+            }
+            
+            return copiedCount;
+        }
+        
+        private static int CopyEditorScripts()
+        {
+            var targetPath = "Assets/Editor";
+            
+            // Ensure target directory exists
+            CreateFolderRecursively(targetPath);
+            
+            var editorTemplates = new[] 
+            { 
+                ("SceneSwitchLeftButton.cs", "SceneSwitchLeftButton.cs.template")
+            };
+            int copiedCount = 0;
+            
+            var packagePath = GetPackagePath();
+            if (packagePath == null) return 0;
+            
+            var templatesPath = Path.Combine(packagePath, "ScriptTemplates");
+            
+            foreach (var (fileName, templateFileName) in editorTemplates)
+            {
+                var destPath = $"{targetPath}/{fileName}";
+                
+                // Check if destination doesn't exist
+                if (!File.Exists(destPath))
+                {
+                    var templatePath = Path.Combine(templatesPath, templateFileName);
+                    if (File.Exists(templatePath))
+                    {
+                        var templateContent = File.ReadAllText(templatePath);
+                        File.WriteAllText(destPath, templateContent);
+                        copiedCount++;
+                        Debug.Log($"テンプレートからエディタスクリプトをコピーしました: {templateFileName} → {fileName}");
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"エディタテンプレート未発見: {templatePath}");
                     }
                 }
             }
