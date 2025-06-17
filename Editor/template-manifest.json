@@ -13,7 +13,8 @@
     "https://github.com/mob-sakai/UnmaskForUGUI.git",
     "https://github.com/naichilab/unityroom-client-library.git?path=Assets/unityroom",
     "https://github.com/hadashiA/VContainer.git?path=VContainer/Assets/VContainer",
-    "https://github.com/AnnulusGames/LitMotion.git?path=src/LitMotion/Assets/LitMotion"
+    "https://github.com/AnnulusGames/LitMotion.git?path=src/LitMotion/Assets/LitMotion",
+    "https://github.com/marijnz/unity-toolbar-extender.git"
   ],
   "testables": [
     "com.unity.inputsystem",
