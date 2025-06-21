@@ -1,0 +1,76 @@
+using UnityEngine;
+using UnityEditor;
+using UnityEditor.SceneManagement;
+using UnityEngine.SceneManagement;
+
+namespace void2610.UnityTemplate.Editor
+{
+    public static class CreateTutorialScenes
+    {
+        [MenuItem("Tools/Unity Template/Create Tutorial Scenes")]
+        public static void CreateAllTutorialScenes()
+        {
+            bool proceed = EditorUtility.DisplayDialog("チュートリアルシーン作成", 
+                "チュートリアル用のシーンファイルを作成します。\n既存のシーンは上書きされません。", 
+                "作成", "キャンセル");
+            
+            if (!proceed) return;
+            
+            // 現在のシーンを保存
+            EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo();
+            
+            int createdCount = 0;
+            
+            // R3 Tutorial Scene
+            if (CreateTutorialScene("Assets/Tutorials/R3/R3Tutorial.unity", "R3 Tutorial"))
+                createdCount++;
+            
+            // LitMotion Tutorial Scene
+            if (CreateTutorialScene("Assets/Tutorials/LitMotion/LitMotionTutorial.unity", "LitMotion Tutorial"))
+                createdCount++;
+            
+            // UniTask Tutorial Scene
+            if (CreateTutorialScene("Assets/Tutorials/UniTask/UniTaskTutorial.unity", "UniTask Tutorial"))
+                createdCount++;
+            
+            AssetDatabase.Refresh();
+            
+            if (createdCount > 0)
+            {
+                EditorUtility.DisplayDialog("完了", 
+                    $"{createdCount}個のチュートリアルシーンを作成しました。\n" +
+                    "各シーンを開いて、README.mdの手順に従ってセットアップしてください。", 
+                    "OK");
+            }
+            else
+            {
+                EditorUtility.DisplayDialog("情報", 
+                    "チュートリアルシーンは既に存在しています。", 
+                    "OK");
+            }
+        }
+        
+        private static bool CreateTutorialScene(string scenePath, string sceneName)
+        {
+            // シーンが既に存在する場合はスキップ
+            if (System.IO.File.Exists(scenePath))
+                return false;
+            
+            // 新しいシーンを作成
+            Scene newScene = EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Single);
+            
+            // メインカメラの設定
+            GameObject mainCamera = GameObject.Find("Main Camera");
+            if (mainCamera != null)
+            {
+                mainCamera.name = $"{sceneName} Camera";
+            }
+            
+            // シーンを保存
+            EditorSceneManager.SaveScene(newScene, scenePath);
+            Debug.Log($"チュートリアルシーンを作成しました: {scenePath}");
+            
+            return true;
+        }
+    }
+}

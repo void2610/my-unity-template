@@ -22,5 +22,12 @@
     "com.unity.render-pipelines.universal": "14.0.0",
     "com.unity.textmeshpro": "3.0.6",
     "com.unity.inputsystem": "1.5.0"
-  }
+  },
+  "samples": [
+    {
+      "displayName": "Library Tutorials",
+      "description": "Interactive tutorials for R3, LitMotion, and UniTask libraries",
+      "path": "Samples~/Tutorials"
+    }
+  ]
 }

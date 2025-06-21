@@ -328,7 +328,8 @@ namespace Void2610.UnityTemplate.Editor
             
             var editorTemplates = new[] 
             { 
-                ("SceneSwitchLeftButton.cs", "SceneSwitchLeftButton.cs.template")
+                ("SceneSwitchLeftButton.cs", "SceneSwitchLeftButton.cs.template"),
+                ("CreateTutorialScenes.cs", "CreateTutorialScenes.cs.template")
             };
             int copiedCount = 0;
             
