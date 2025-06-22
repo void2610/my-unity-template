@@ -26,7 +26,7 @@
   "samples": [
     {
       "displayName": "Library Tutorials",
-      "description": "Interactive tutorials demonstrating reactive programming, animation, async operations, and dependency injection patterns",
+      "description": "Interactive tutorials for included libraries",
       "path": "Samples~/Tutorials"
     }
   ]
