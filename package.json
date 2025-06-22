@@ -26,7 +26,7 @@
   "samples": [
     {
       "displayName": "Library Tutorials",
-      "description": "Interactive tutorials for R3, LitMotion, and UniTask libraries",
+      "description": "Interactive tutorials demonstrating reactive programming, animation, async operations, and dependency injection patterns",
       "path": "Samples~/Tutorials"
     }
   ]
