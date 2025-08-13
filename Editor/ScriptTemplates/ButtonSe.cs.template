@@ -7,6 +7,7 @@ namespace Void2610.UnityTemplate
     /// <summary>
     /// ボタンに効果音を自動追加するコンポーネント
     /// ホバー音とクリック音を設定して、統一された音響フィードバックを提供
+    /// SeManagerを使用した統合音声管理バージョン
     /// </summary>
     public class ButtonSe : MonoBehaviour, IPointerClickHandler, IPointerEnterHandler, ISelectHandler, ISubmitHandler
     {
@@ -24,22 +25,15 @@ namespace Void2610.UnityTemplate
         [Header("クールダウン")]
         [SerializeField] private float hoverCooldown = 0.1f; // ホバー音のクールダウン時間
         
+        [Header("重要度設定")]
+        [SerializeField] private bool isImportantButton = false; // 重要なボタンの場合、音源が足りなくても強制再生
+        
         private Button _button;
-        private AudioSource _audioSource;
         private float _lastHoverTime;
         
         private void Awake()
         {
             _button = GetComponent<Button>();
-            
-            // AudioSourceを取得または作成
-            _audioSource = GetComponent<AudioSource>();
-            if (_audioSource == null)
-            {
-                _audioSource = gameObject.AddComponent<AudioSource>();
-                _audioSource.playOnAwake = false;
-                _audioSource.loop = false;
-            }
         }
         
         /// <summary>
@@ -48,9 +42,9 @@ namespace Void2610.UnityTemplate
         private void PlayHoverSound()
         {
             // ボタンが無効またはクールダウン中の場合は再生しない
-            if ((_button != null && !_button.interactable) || 
+            if ((_button && !_button.interactable) || 
                 Time.time - _lastHoverTime < hoverCooldown ||
-                hoverSe == null) 
+                !hoverSe) 
                 return;
             
             _lastHoverTime = Time.time;
@@ -62,33 +56,24 @@ namespace Void2610.UnityTemplate
         /// </summary>
         private void PlayClickSound()
         {
-            if ((_button != null && !_button.interactable) || clickSe == null) 
+            if ((_button && !_button.interactable) || clickSe == null) 
                 return;
             
             PlaySound(clickSe, clickVolume);
         }
         
         /// <summary>
-        /// 効果音を再生する汎用メソッド
+        /// 効果音を再生する汎用メソッド（SeManager統合版）
         /// </summary>
         private void PlaySound(AudioClip clip, float volume)
         {
-            if (clip == null) return;
+            if (!clip) return;
             
-            _audioSource.clip = clip;
-            _audioSource.volume = volume;
+            // ピッチの計算
+            var pitch = randomizePitch ? Random.Range(minPitch, maxPitch) : 1.0f;
             
-            // ピッチのランダム化
-            if (randomizePitch)
-            {
-                _audioSource.pitch = Random.Range(minPitch, maxPitch);
-            }
-            else
-            {
-                _audioSource.pitch = 1f;
-            }
-            
-            _audioSource.Play();
+            // SeManagerを使用して再生
+            SeManager.Instance.PlaySe(clip, volume, pitch, important: isImportantButton);
         }
         
         // EventSystemインターフェースの実装
@@ -161,6 +146,22 @@ namespace Void2610.UnityTemplate
             randomizePitch = enableRandomPitch;
             minPitch = minPitchValue;
             maxPitch = maxPitchValue;
+        }
+        
+        /// <summary>
+        /// 重要度設定を更新
+        /// </summary>
+        public void SetImportant(bool important)
+        {
+            isImportantButton = important;
+        }
+        
+        /// <summary>
+        /// クールダウン設定を更新
+        /// </summary>
+        public void SetHoverCooldown(float cooldown)
+        {
+            hoverCooldown = Mathf.Max(0f, cooldown);
         }
 
 #if UNITY_EDITOR
