@@ -2,6 +2,13 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using System.Linq;
+using LitMotion;
+using LitMotion.Extensions;
+
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Void2610.UnityTemplate
 {
@@ -200,11 +207,140 @@ namespace Void2610.UnityTemplate
         /// </summary>
         public static void ResetTransform(this Transform transform)
         {
-            if (transform == null) return;
+            if (!transform) return;
 
             transform.localPosition = Vector3.zero;
             transform.localRotation = Quaternion.identity;
             transform.localScale = Vector3.one;
         }
+        
+        /// <summary>
+        /// Imageの透明度をLitMotionでフェードインさせる
+        /// </summary>
+        public static MotionHandle FadeIn(this Image image, float duration, Ease ease = Ease.Linear)
+        {
+            return LMotion.Create(0f, 1f, duration)
+                .WithEase(ease)
+                .BindToColorA(image)
+                .AddTo(image.gameObject);
+        }
+        
+        /// <summary>
+        /// Imageの透明度をLitMotionでフェードアウトさせる
+        /// </summary>
+        public static MotionHandle FadeOut(this Image image, float duration, Ease ease = Ease.Linear)
+        {
+            return LMotion.Create(1f, 0f, duration)
+                .WithEase(ease)
+                .BindToColorA(image)
+                .AddTo(image.gameObject);
+        }
+        
+        /// <summary>
+        /// CanvasGroupの透明度をLitMotionでフェードインさせる
+        /// </summary>
+        public static MotionHandle FadeIn(this CanvasGroup canvasGroup, float duration, Ease ease = Ease.Linear)
+        {
+            return LMotion.Create(0f, 1f, duration)
+                .WithEase(ease)
+                .BindToAlpha(canvasGroup)
+                .AddTo(canvasGroup.gameObject);
+        }
+        
+        /// <summary>
+        /// CanvasGroupの透明度をLitMotionでフェードアウトさせる
+        /// </summary>
+        public static MotionHandle FadeOut(this CanvasGroup canvasGroup, float duration, Ease ease = Ease.Linear)
+        {
+            return LMotion.Create(1f, 0f, duration)
+                .WithEase(ease)
+                .BindToAlpha(canvasGroup)
+                .AddTo(canvasGroup.gameObject);
+        }
+        
+        /// <summary>
+        /// TransformをLitMotionで指定位置に移動
+        /// </summary>
+        public static MotionHandle MoveTo(this Transform transform, Vector3 targetPosition, float duration, Ease ease = Ease.Linear)
+        {
+            return LMotion.Create(transform.localPosition, targetPosition, duration)
+                .WithEase(ease)
+                .BindToLocalPosition(transform)
+                .AddTo(transform.gameObject);
+        }
+        
+        /// <summary>
+        /// TransformをLitMotionで指定スケールに変更
+        /// </summary>
+        public static MotionHandle ScaleTo(this Transform transform, Vector3 targetScale, float duration, Ease ease = Ease.Linear)
+        {
+            return LMotion.Create(transform.localScale, targetScale, duration)
+                .WithEase(ease)
+                .BindToLocalScale(transform)
+                .AddTo(transform.gameObject);
+        }
+        
+        /// <summary>
+        /// RectTransformをLitMotionで指定位置に移動（anchoredPosition）
+        /// </summary>
+        public static MotionHandle MoveToAnchored(this RectTransform rectTransform, Vector2 targetPosition, float duration, Ease ease = Ease.Linear)
+        {
+            return LMotion.Create(rectTransform.anchoredPosition, targetPosition, duration)
+                .WithEase(ease)
+                .BindToAnchoredPosition(rectTransform)
+                .AddTo(rectTransform.gameObject);
+        }
+        
+        /// <summary>
+        /// TransformをLitMotionで指定回転に変更
+        /// </summary>
+        public static MotionHandle RotateTo(this Transform transform, Quaternion targetRotation, float duration, Ease ease = Ease.Linear)
+        {
+            return LMotion.Create(transform.rotation, targetRotation, duration)
+                .WithEase(ease)
+                .BindToRotation(transform)
+                .AddTo(transform.gameObject);
+        }
+        
+#if UNITY_EDITOR
+        /// <summary>
+        /// 指定したScriptableObjectと同じディレクトリ内の指定した型のアセットを一括登録
+        /// </summary>
+        /// <typeparam name="T">登録するScriptableObjectの型</typeparam>
+        /// <param name="targetObject">検索基準となるScriptableObject</param>
+        /// <param name="targetList">登録先のリスト</param>
+        /// <param name="sortKeySelector">ソート用のキーセレクタ（nullの場合はソートしない）</param>
+        public static void RegisterAssetsInSameDirectory<T>(
+            this ScriptableObject targetObject, 
+            List<T> targetList, 
+            System.Func<T, string> sortKeySelector = null) where T : ScriptableObject
+        {
+            // このScriptableObjectと同じディレクトリパスを取得
+            var path = AssetDatabase.GetAssetPath(targetObject);
+            path = System.IO.Path.GetDirectoryName(path);
+            
+            // 指定ディレクトリ内の指定した型のアセットを検索
+            var typeName = typeof(T).Name;
+            var guids = AssetDatabase.FindAssets($"t:{typeName}", new[] { path });
+            
+            // 検索結果をリストに追加
+            targetList.Clear();
+            foreach (var guid in guids)
+            {
+                var assetPath = AssetDatabase.GUIDToAssetPath(guid);
+                var asset = AssetDatabase.LoadAssetAtPath<T>(assetPath);
+                if (asset) targetList.Add(asset);
+            }
+            
+            // ソートが指定されている場合はソート実行
+            if (sortKeySelector != null)
+            {
+                targetList.Sort((a, b) => string.Compare(sortKeySelector(a), sortKeySelector(b)));
+            }
+            
+            // ScriptableObjectを更新
+            EditorUtility.SetDirty(targetObject);
+        }
+#endif
     }
 }
