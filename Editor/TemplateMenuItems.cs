@@ -269,94 +269,87 @@ namespace Void2610.UnityTemplate.Editor
         private static int CopyUtilityScripts()
         {
             var targetPath = "Assets/Scripts/Utils";
-            
-            // Ensure target directory exists
             CreateFolderRecursively(targetPath);
             
-            var scriptTemplates = new[] 
-            { 
-                ("SingletonMonoBehaviour.cs", "SingletonMonoBehaviour.cs.template"),
-                ("SerializableDictionary.cs", "SerializableDictionary.cs.template"),
-                ("CameraAspectRatioHandler.cs", "CameraAspectRatioHandler.cs.template"),
-                ("ExtendedMethods.cs", "ExtendedMethods.cs.template"),
-                ("DebugLogDisplay.cs", "DebugLogDisplay.cs.template"),
-                ("CanvasAspectRatioFitter.cs", "CanvasAspectRatioFitter.cs.template"),
-                ("FloatMove.cs", "FloatMove.cs.template"),
-                ("MyButton.cs", "MyButton.cs.template"),
-                ("TMPInputFieldCaretFixer.cs", "TMPInputFieldCaretFixer.cs.template"),
-                ("ButtonSe.cs", "ButtonSe.cs.template"),
-                ("SpriteSheetAnimator.cs", "SpriteSheetAnimator.cs.template")
-            };
-            int copiedCount = 0;
+            // エディタ専用テンプレートを除外するパターン
+            var excludePatterns = new[] { "SceneSwitchLeftButton", "CreateTutorialScenes" };
             
-            var packagePath = GetPackagePath();
-            if (packagePath == null) return 0;
-            
-            var templatesPath = Path.Combine(packagePath, "ScriptTemplates");
-            
-            foreach (var (fileName, templateFileName) in scriptTemplates)
-            {
-                var destPath = $"{targetPath}/{fileName}";
-                
-                // Check if destination doesn't exist
-                if (!File.Exists(destPath))
-                {
-                    var templatePath = Path.Combine(templatesPath, templateFileName);
-                    if (File.Exists(templatePath))
-                    {
-                        var templateContent = File.ReadAllText(templatePath);
-                        File.WriteAllText(destPath, templateContent);
-                        copiedCount++;
-                        Debug.Log($"テンプレートからスクリプトをコピーしました: {templateFileName} → {fileName}");
-                    }
-                    else
-                    {
-                        Debug.LogWarning($"テンプレート未発見: {templatePath}");
-                    }
-                }
-            }
-            
-            return copiedCount;
+            return CopyTemplateScripts(targetPath, excludePatterns);
         }
         
         private static int CopyEditorScripts()
         {
             var targetPath = "Assets/Editor";
-            
-            // Ensure target directory exists
             CreateFolderRecursively(targetPath);
             
-            var editorTemplates = new[] 
-            { 
-                ("SceneSwitchLeftButton.cs", "SceneSwitchLeftButton.cs.template"),
-                ("CreateTutorialScenes.cs", "CreateTutorialScenes.cs.template")
-            };
-            int copiedCount = 0;
+            // エディタ専用テンプレートのみを対象とする
+            var includePatterns = new[] { "SceneSwitchLeftButton", "CreateTutorialScenes" };
             
+            return CopyTemplateScripts(targetPath, null, includePatterns);
+        }
+        
+        /// <summary>
+        /// テンプレートファイルを自動検出してコピーする汎用メソッド
+        /// </summary>
+        /// <param name="targetPath">コピー先パス</param>
+        /// <param name="excludePatterns">除外するファイル名パターン</param>
+        /// <param name="includePatterns">含めるファイル名パターン（nullの場合は全て含める）</param>
+        /// <returns>コピーしたファイル数</returns>
+        private static int CopyTemplateScripts(string targetPath, string[] excludePatterns = null, string[] includePatterns = null)
+        {
             var packagePath = GetPackagePath();
             if (packagePath == null) return 0;
             
             var templatesPath = Path.Combine(packagePath, "ScriptTemplates");
+            if (!Directory.Exists(templatesPath)) return 0;
             
-            foreach (var (fileName, templateFileName) in editorTemplates)
+            var templateFiles = Directory.GetFiles(templatesPath, "*.template");
+            int copiedCount = 0;
+            
+            foreach (var templatePath in templateFiles)
             {
-                var destPath = $"{targetPath}/{fileName}";
+                var templateFileName = Path.GetFileName(templatePath);
+                var fileName = templateFileName.Replace(".template", "");
                 
-                // Check if destination doesn't exist
+                // includePatterns が指定されている場合は、それに含まれるもののみを処理
+                if (includePatterns != null)
+                {
+                    bool shouldInclude = false;
+                    foreach (var pattern in includePatterns)
+                    {
+                        if (fileName.Contains(pattern))
+                        {
+                            shouldInclude = true;
+                            break;
+                        }
+                    }
+                    if (!shouldInclude) continue;
+                }
+                
+                // excludePatterns が指定されている場合は、それに含まれるものを除外
+                if (excludePatterns != null)
+                {
+                    bool shouldExclude = false;
+                    foreach (var pattern in excludePatterns)
+                    {
+                        if (fileName.Contains(pattern))
+                        {
+                            shouldExclude = true;
+                            break;
+                        }
+                    }
+                    if (shouldExclude) continue;
+                }
+                
+                var destPath = Path.Combine(targetPath, fileName).Replace('\\', '/');
+                
+                // コピー先が存在しない場合のみコピー
                 if (!File.Exists(destPath))
                 {
-                    var templatePath = Path.Combine(templatesPath, templateFileName);
-                    if (File.Exists(templatePath))
-                    {
-                        var templateContent = File.ReadAllText(templatePath);
-                        File.WriteAllText(destPath, templateContent);
-                        copiedCount++;
-                        Debug.Log($"テンプレートからエディタスクリプトをコピーしました: {templateFileName} → {fileName}");
-                    }
-                    else
-                    {
-                        Debug.LogWarning($"エディタテンプレート未発見: {templatePath}");
-                    }
+                    var templateContent = File.ReadAllText(templatePath);
+                    File.WriteAllText(destPath, templateContent);
+                    copiedCount++;
+                    Debug.Log($"テンプレートからスクリプトをコピーしました: {templateFileName} → {fileName}");
                 }
             }
             
