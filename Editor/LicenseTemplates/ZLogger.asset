@@ -10,12 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b76f0aa177eb41caa56a14d710e0d751, type: 3}
-  m_Name: UnityToolbarExtender
+  m_Name: ZLogger
   m_EditorClassIdentifier:
-  _libraryName: UnityToolbarExtension
-  _memo1: 'Extends the Unity Toolbar with your custom Editor GUI code'
+  _libraryName: ZLogger
+  _memo1: 'Zero Allocation Text/Structured Logger for .NET and Unity'
   _libversion: None
-  _webURL1: https://github.com/Yusuke57/UnityToolbarExtension
+  _webURL1: https://github.com/Cysharp/ZLogger
   _webURL2:
   _useLicenseList: []
   _createdTimeText: 2025/11/21_13:00:00
@@ -27,7 +27,7 @@ MonoBehaviour:
   showLicenseOrder: 500
   _licenseShowText: 'MIT License
 
-    Copyright (c) 2025 Yusuke57
+    Copyright (c) 2020 Cysharp, Inc.
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -46,5 +46,5 @@ MonoBehaviour:
     LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
     SOFTWARE.'
-  _customText1: 
-  _customText2: 
+  _customText1:
+  _customText2:
