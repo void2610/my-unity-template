@@ -902,7 +902,7 @@ namespace Void2610.UnityTemplate.Editor
                     var realPath = Path.GetFullPath(utilsPath);
                     var expectedPath = Path.GetFullPath(submodulePath);
 
-                    if (realPath.Equals(expectedPath, StringComparison.OrdinalIgnoreCase))
+                    if (realPath.Equals(expectedPath, System.StringComparison.OrdinalIgnoreCase))
                     {
                         Debug.Log("✓ Symbolic link already exists and is correct");
                         ShowSetupCompletedDialog();
