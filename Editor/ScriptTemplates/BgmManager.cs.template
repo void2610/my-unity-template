@@ -51,6 +51,8 @@ namespace Void2610.UnityTemplate
         private bool _isFading;
         private SoundData _currentBGM;
         private MotionHandle _fadeHandle;
+        private MotionHandle _duckingHandle;
+        private float _originalVolume = 1.0f;
 
         // PlayerPrefsキー
         private const string BGM_VOLUME_KEY = "BgmVolume";
@@ -113,15 +115,50 @@ namespace Void2610.UnityTemplate
         public async UniTask Stop()
         {
             _isPlaying = false;
-            
+
             if (_fadeHandle.IsActive()) _fadeHandle.Cancel();
             await LMotion.Create(_audioSource.volume, 0f, fadeTime)
                 .WithEase(Ease.InQuad)
                 .BindToVolume(_audioSource)
                 .ToUniTask();
-            
+
             _audioSource.Stop();
             _currentBGM = null;
+        }
+
+        /// <summary>
+        /// BGMボリュームを一時的に下げる（SE再生時のダッキング用）
+        /// 重要なボイスやSEの際にBGMを目立たなくする効果
+        /// </summary>
+        /// <param name="duckVolume">下げる先のボリューム倍率（0.0f～1.0f、通常は0.2f程度）</param>
+        /// <param name="duckFadeTime">フェード時間（秒）</param>
+        public async UniTask DuckVolume(float duckVolume = 0.2f, float duckFadeTime = 0.5f)
+        {
+            _originalVolume = _audioSource.volume;
+
+            if (_duckingHandle.IsActive()) _duckingHandle.Cancel();
+            _duckingHandle = LMotion.Create(_audioSource.volume, _originalVolume * duckVolume, duckFadeTime)
+                .WithEase(Ease.OutQuad)
+                .BindToVolume(_audioSource)
+                .AddTo(this);
+
+            await _duckingHandle.ToUniTask();
+        }
+
+        /// <summary>
+        /// ダッキングしたボリュームを元に戻す
+        /// DuckVolumeと対で使用します
+        /// </summary>
+        /// <param name="restoreFadeTime">フェード時間（秒）</param>
+        public async UniTask RestoreVolume(float restoreFadeTime = 0.5f)
+        {
+            if (_duckingHandle.IsActive()) _duckingHandle.Cancel();
+            _duckingHandle = LMotion.Create(_audioSource.volume, _originalVolume, restoreFadeTime)
+                .WithEase(Ease.InQuad)
+                .BindToVolume(_audioSource)
+                .AddTo(this);
+
+            await _duckingHandle.ToUniTask();
         }
 
         /// <summary>
@@ -281,6 +318,7 @@ namespace Void2610.UnityTemplate
         protected override void OnDestroy()
         {
             if (_fadeHandle.IsActive()) _fadeHandle.Cancel();
+            if (_duckingHandle.IsActive()) _duckingHandle.Cancel();
             base.OnDestroy();
         }
     }
