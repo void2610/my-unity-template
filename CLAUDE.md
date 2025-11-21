@@ -6,23 +6,34 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a Unity Package Manager (UPM) compatible template package for rapid Unity game development. The package provides automated setup for common Unity development patterns including URP, R3 reactive extensions, Input System, and structured project organization.
 
+**This package is part of a 2-repository architecture:**
+- **my-unity-template** (this repository): Automated installation tools and setup workflows
+- **[my-unity-utils](https://github.com/void2610/my-unity-utils)**: Reusable utility scripts (integrated via Git Submodule)
+
 ## Core Architecture
 
 ### Package Structure
 - **Unity Package**: Follows UPM conventions with `package.json`, assembly definitions, and proper folder structure
 - **Editor-Only Installation**: All setup tools run in Unity Editor via custom menu items (`Tools > Unity Template`)
-- **Template-Based Approach**: Uses `.cs.template` files to avoid compile errors before dependencies are installed
+- **Git Submodule Integration**: Utility scripts are managed in a separate repository and added as a Git Submodule
+- **Symbolic Link**: `Assets/Scripts/Utils/` symlink points to the submodule for seamless Unity integration
 - **Samples Integration**: Interactive tutorials demonstrate library usage in `Samples~/Tutorials/`
 
 ### Key Components
 
 **TemplateMenuItems.cs** (`Editor/TemplateMenuItems.cs`)
-- Main entry point for all package functionality (775 lines)
+- Main entry point for all package functionality (970+ lines)
 - Implements automated dependency installation with domain reload resilience
+- **New:** Git Submodule setup with symbolic link creation (Windows/macOS/Linux compatible)
 - Uses AssetDatabase for file access (not Resources folder to avoid build inclusion)
 - Handles Unity 6 compatibility by automatically skipping incompatible packages
 - Namespace: `Void2610.UnityTemplate.Editor`
 - Classes: `TemplateManifestData`, `ManifestData`, `InstallationState`, `TemplateMenuItems`
+- Key Methods:
+  - `InstallDependencies()`: Package installation
+  - `SetupUtilsSubmodule()`: **New** - Automated submodule + symlink setup
+  - `CreateSymlink()`: **New** - Cross-platform symlink creation
+  - `ExecuteGitCommandSync()`: **New** - Git command execution helper
 
 **template-manifest.json** (`Editor/template-manifest.json`)
 - Defines packages to install in structured format:
@@ -30,13 +41,17 @@ This is a Unity Package Manager (UPM) compatible template package for rapid Unit
   - `gitPackages`: Git-based packages (R3, UniTask, VContainer, LitMotion, UI Effect libraries)
   - `testables`: Packages available for testing
 
-**ScriptTemplates** (`Editor/ScriptTemplates/`)
-- Contains utility script templates for common Unity patterns:
-  - `SingletonMonoBehaviour.cs.template`: Thread-safe singleton with automatic instantiation
-  - `SerializableDictionary.cs.template`: Unity-serializable dictionary implementation
-  - UI utilities: `MyButton`, `ButtonSe`, `TMPInputFieldCaretFixer`
-  - Animation: `SpriteSheetAnimator`, `FloatMove`, `LitMotion` integration
-  - System utilities: `ExtendedMethods`, `DebugLogDisplay`, camera/canvas aspect ratio handlers
+**my-unity-utils Submodule** (external repository)
+- **Repository:** https://github.com/void2610/my-unity-utils
+- **34 reusable Unity scripts** organized by category:
+  - `UI/`: ButtonSe, MyButton, MultiImageButton, CanvasGroupSwitcher, etc.
+  - `Animation/`: SpriteSheetAnimator, FloatMove
+  - `Core/`: SingletonMonoBehaviour, ExtendedMethods, SerializableDictionary, Utils
+  - `Audio/`: BgmManager, SeManager
+  - `Debug/`: DebugLogDisplay, GameViewCapture, CurrentSelectedGameObjectChecker
+  - `System/`: DataPersistence, RandomManager, IrisShot, VersionText, etc.
+- Integrated via Git Submodule at project root: `<project>/my-unity-utils/`
+- Linked to Unity via symlink: `Assets/Scripts/Utils/` → `../../my-unity-utils/`
 
 **LicenseTemplates** (`Editor/LicenseTemplates/`)
 - Pre-configured license assets for LicenseMaster integration
@@ -63,12 +78,19 @@ This is a Unity Package Manager (UPM) compatible template package for rapid Unit
 All functionality accessed via Unity Editor menus under `Tools > Unity Template`:
 
 ```
-Tools > Unity Template > Install Dependencies     # Install all packages from template-manifest.json
-Tools > Unity Template > Create Folder Structure  # Create standard project folders
-Tools > Unity Template > Copy Utility Scripts     # Copy .cs.template files to Assets/Scripts/Utils/
-Tools > Unity Template > Copy Editor Scripts      # Copy editor-specific templates to Assets/Editor/
-Tools > Unity Template > Copy License Files       # Copy license assets for LicenseMaster
+Tools > Unity Template > Install Dependencies      # Install all packages from template-manifest.json
+Tools > Unity Template > Create Folder Structure   # Create standard project folders
+Tools > Unity Template > Setup Utils Submodule     # **NEW:** Add my-unity-utils submodule + create symlink
+Tools > Unity Template > Copy Utility Scripts      # (Legacy) Copy .cs.template files - deprecated in favor of submodule
+Tools > Unity Template > Copy Editor Scripts       # Copy editor-specific templates to Assets/Editor/
+Tools > Unity Template > Copy License Files        # Copy license assets for LicenseMaster
 ```
+
+**Recommended workflow:**
+1. Install Dependencies
+2. **Setup Utils Submodule** (instead of Copy Utility Scripts)
+3. Create Folder Structure (optional)
+4. Copy License Files (optional)
 
 ### Package Development Workflow
 ```bash
@@ -124,6 +146,80 @@ Three assembly definitions following Unity conventions:
 - `com.void2610.unity-template.Runtime.asmdef`: Runtime scripts
 - `com.void2610.unity-template.Editor.asmdef`: Editor-only scripts
 - `com.void2610.unity-template.Tests.asmdef`: Test scripts
+
+### Submodule and Symlink Architecture
+
+**Overview:**
+Utility scripts are managed in a separate Git repository (`my-unity-utils`) and integrated into Unity projects via Git Submodule + Symbolic Link.
+
+**Directory Structure:**
+```
+<Unity Project>/
+├─ my-unity-utils/                 ← Git Submodule (project root)
+│   ├─ UI/
+│   ├─ Animation/
+│   ├─ Core/
+│   ├─ Audio/
+│   ├─ Debug/
+│   └─ System/
+├─ Assets/
+│   └─ Scripts/
+│       └─ Utils/                  ← Symbolic Link → ../../my-unity-utils
+└─ Packages/
+    └─ manifest.json
+```
+
+**Setup Process (TemplateMenuItems.cs:149-229):**
+1. **Create Assets/Scripts folder** if it doesn't exist
+2. **Add Git Submodule:**
+   ```bash
+   git submodule add https://github.com/void2610/my-unity-utils.git my-unity-utils
+   git submodule update --init --recursive
+   ```
+3. **Create Symbolic Link:**
+   - **Windows (Junction):** `mklink /J Assets\Scripts\Utils ..\..\my-unity-utils`
+   - **macOS/Linux:** `ln -s ../../my-unity-utils Assets/Scripts/Utils`
+4. **Refresh AssetDatabase** to make Unity recognize the scripts
+
+**Cross-Platform Symlink Creation:**
+```csharp
+// Windows uses Junction (no admin rights required)
+#if UNITY_EDITOR_WIN
+    var args = $"/c mklink /J \"{linkPath}\" \"{targetPath}\"";
+    ExecuteShellCommand("cmd.exe", args);
+#else
+    // macOS/Linux use standard symlink
+    ExecuteShellCommand("ln", $"-s \"{targetPath}\" \"{linkPath}\"");
+#endif
+```
+
+**Git Considerations:**
+- **Submodule tracked in `.gitmodules`** - committed to repository
+- **Symlink NOT tracked** - OS-dependent, recreated locally
+- **`.gitignore` entry:** `/Assets/Scripts/Utils` (but keep `Utils.meta`)
+
+**Advantages:**
+- ✅ Scripts managed in dedicated repository
+- ✅ Shared across multiple projects
+- ✅ Version controlled with Git tags/commits
+- ✅ Unity treats them as regular Assets scripts
+- ✅ Direct editing in Unity Editor
+- ✅ No UPM complexity for simple script collection
+
+**Workflow for Updates:**
+```bash
+# Edit scripts in Unity (Assets/Scripts/Utils/)
+cd my-unity-utils
+git add .
+git commit -m "Update scripts"
+git push
+
+# Update parent project's submodule reference
+cd ..
+git add my-unity-utils
+git commit -m "Update my-unity-utils submodule"
+git push
+```
 
 ## Namespace and Naming Conventions
 

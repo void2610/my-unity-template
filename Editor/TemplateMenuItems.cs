@@ -120,9 +120,9 @@ namespace Void2610.UnityTemplate.Editor
                 "Assets/Editor",
                 "Assets/Others"
             };
-            
+
             int createdCount = 0;
-            
+
             foreach (var folder in folders)
             {
                 if (CreateFolderRecursively(folder))
@@ -130,22 +130,104 @@ namespace Void2610.UnityTemplate.Editor
                     createdCount++;
                 }
             }
-            
+
             AssetDatabase.Refresh();
-            
+
             if (createdCount > 0)
             {
-                EditorUtility.DisplayDialog("フォルダ構造作成完了", 
-                    $"{createdCount}個のフォルダを作成しました。\nProjectウィンドウで確認してください。", 
+                EditorUtility.DisplayDialog("フォルダ構造作成完了",
+                    $"{createdCount}個のフォルダを作成しました。\nProjectウィンドウで確認してください。",
                     "OK");
             }
             else
             {
-                EditorUtility.DisplayDialog("フォルダ構造", 
+                EditorUtility.DisplayDialog("フォルダ構造",
                     "フォルダ構造は既に存在しています。", "OK");
             }
         }
-        
+
+        [MenuItem(MENU_ROOT + "Setup Utils Submodule")]
+        public static void SetupUtilsSubmodule()
+        {
+            var projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+            var submodulePath = Path.Combine(projectRoot, "my-unity-utils");
+            var scriptsPath = Path.Combine(Application.dataPath, "Scripts");
+            var utilsPath = Path.Combine(scriptsPath, "Utils");
+
+            // 1. Assets/Scriptsフォルダ作成
+            if (!AssetDatabase.IsValidFolder("Assets/Scripts"))
+            {
+                CreateFolderRecursively("Assets/Scripts");
+                AssetDatabase.Refresh();
+            }
+
+            // 2. Git submoduleを追加
+            if (!Directory.Exists(submodulePath))
+            {
+                Debug.Log("Adding my-unity-utils as submodule...");
+
+                int exitCode = ExecuteGitCommandSync(projectRoot,
+                    "submodule add https://github.com/void2610/my-unity-utils.git my-unity-utils");
+
+                if (exitCode == 0)
+                {
+                    Debug.Log("✓ Submodule added");
+
+                    // Submoduleを初期化
+                    ExecuteGitCommandSync(projectRoot, "submodule update --init --recursive");
+                }
+                else
+                {
+                    EditorUtility.DisplayDialog("エラー",
+                        "Submoduleの追加に失敗しました。\nGitリポジトリが初期化されているか確認してください。",
+                        "OK");
+                    return;
+                }
+            }
+            else
+            {
+                Debug.Log("Submodule already exists");
+            }
+
+            // 3. シンボリックリンクを作成
+            if (Directory.Exists(utilsPath) || File.Exists(utilsPath))
+            {
+                EditorUtility.DisplayDialog("警告",
+                    "Assets/Scripts/Utils は既に存在しています。\n\n" +
+                    "シンボリックリンク作成をスキップしました。\n" +
+                    "手動で削除してから再実行してください。",
+                    "OK");
+                return;
+            }
+
+            Debug.Log("Creating symbolic link...");
+            var relativePath = Path.Combine("..", "..", "my-unity-utils");
+            bool symlinkCreated = CreateSymlink(utilsPath, relativePath);
+
+            if (symlinkCreated)
+            {
+                Debug.Log("✓ Symbolic link created: Assets/Scripts/Utils -> my-unity-utils");
+                AssetDatabase.Refresh();
+
+                EditorUtility.DisplayDialog("セットアップ完了",
+                    "my-unity-utils のセットアップが完了しました！\n\n" +
+                    "✓ Submodule追加: my-unity-utils/\n" +
+                    "✓ シンボリックリンク作成: Assets/Scripts/Utils/\n\n" +
+                    "Utilsスクリプトが利用可能になりました。",
+                    "OK");
+            }
+            else
+            {
+                EditorUtility.DisplayDialog("エラー",
+                    "シンボリックリンクの作成に失敗しました。\n\n" +
+                    "Windows: 管理者権限が必要な場合があります\n" +
+                    "macOS/Linux: ターミナルで手動実行してください\n\n" +
+                    "手動コマンド:\n" +
+                    "ln -s ../../my-unity-utils Assets/Scripts/Utils",
+                    "OK");
+            }
+        }
+
         [MenuItem(MENU_ROOT + "Copy Utility Scripts")]
         public static void CopyUtilityScriptsMenuItem()
         {
@@ -763,14 +845,127 @@ namespace Void2610.UnityTemplate.Editor
             isInstallingPackages = false;
             packageQueue.Clear();
             currentAddRequest = null;
-            
+
             EditorApplication.update -= PackageInstallProgress;
             EditorUtility.ClearProgressBar();
-            
+
             ClearInstallationState();
-            
-            EditorUtility.DisplayDialog("キャンセル完了", 
+
+            EditorUtility.DisplayDialog("キャンセル完了",
                 "依存関係のインストールをキャンセルしました。", "OK");
+        }
+
+        /// <summary>
+        /// Gitコマンドを同期実行する
+        /// </summary>
+        /// <param name="workingDirectory">作業ディレクトリ</param>
+        /// <param name="arguments">Gitコマンドの引数</param>
+        /// <returns>終了コード (0=成功)</returns>
+        private static int ExecuteGitCommandSync(string workingDirectory, string arguments)
+        {
+            var processInfo = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "git",
+                Arguments = arguments,
+                WorkingDirectory = workingDirectory,
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            };
+
+            try
+            {
+                using (var process = System.Diagnostics.Process.Start(processInfo))
+                {
+                    process.WaitForExit();
+                    var output = process.StandardOutput.ReadToEnd();
+                    var error = process.StandardError.ReadToEnd();
+
+                    if (!string.IsNullOrEmpty(output))
+                    {
+                        Debug.Log($"Git: {output}");
+                    }
+
+                    if (process.ExitCode != 0 && !string.IsNullOrEmpty(error))
+                    {
+                        Debug.LogError($"Git error: {error}");
+                    }
+
+                    return process.ExitCode;
+                }
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"Git command failed: {e.Message}");
+                return -1;
+            }
+        }
+
+        /// <summary>
+        /// シンボリックリンクを作成する
+        /// </summary>
+        /// <param name="linkPath">リンクのパス</param>
+        /// <param name="targetPath">ターゲットのパス（相対パス）</param>
+        /// <returns>成功した場合true</returns>
+        private static bool CreateSymlink(string linkPath, string targetPath)
+        {
+            try
+            {
+#if UNITY_EDITOR_WIN
+                // Windows: Junction（管理者権限不要）
+                var args = $"/c mklink /J \"{linkPath}\" \"{targetPath}\"";
+                return ExecuteShellCommand("cmd.exe", args) == 0;
+#else
+                // macOS/Linux: シンボリックリンク
+                return ExecuteShellCommand("ln", $"-s \"{targetPath}\" \"{linkPath}\"") == 0;
+#endif
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"Failed to create symlink: {e.Message}");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// シェルコマンドを実行する
+        /// </summary>
+        /// <param name="command">コマンド</param>
+        /// <param name="arguments">引数</param>
+        /// <returns>終了コード (0=成功)</returns>
+        private static int ExecuteShellCommand(string command, string arguments)
+        {
+            var processInfo = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = command,
+                Arguments = arguments,
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            };
+
+            try
+            {
+                using (var process = System.Diagnostics.Process.Start(processInfo))
+                {
+                    process.WaitForExit();
+                    var error = process.StandardError.ReadToEnd();
+
+                    if (process.ExitCode != 0 && !string.IsNullOrEmpty(error))
+                    {
+                        Debug.LogError($"Command error: {error}");
+                    }
+
+                    return process.ExitCode;
+                }
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"Command execution failed: {e.Message}");
+                return -1;
+            }
         }
     }
 }
