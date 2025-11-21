@@ -228,50 +228,6 @@ namespace Void2610.UnityTemplate.Editor
             }
         }
 
-        [MenuItem(MENU_ROOT + "Copy Utility Scripts")]
-        public static void CopyUtilityScriptsMenuItem()
-        {
-            int copiedScripts = CopyUtilityScripts();
-            
-            AssetDatabase.Refresh();
-            
-            if (copiedScripts > 0)
-            {
-                EditorUtility.DisplayDialog("スクリプトコピー完了", 
-                    $"{copiedScripts}個のユーティリティスクリプトをコピーしました。\n" +
-                    "Projectウィンドウで確認してください。\n\n" +
-                    "注意: R3ライブラリが必要です。先に'Install Dependencies'を実行してください。", 
-                    "OK");
-            }
-            else
-            {
-                EditorUtility.DisplayDialog("スクリプトコピー", 
-                    "ユーティリティスクリプトは既に存在しています。", "OK");
-            }
-        }
-        
-        [MenuItem(MENU_ROOT + "Copy Editor Scripts")]
-        public static void CopyEditorScriptsMenuItem()
-        {
-            int copiedScripts = CopyEditorScripts();
-            
-            AssetDatabase.Refresh();
-            
-            if (copiedScripts > 0)
-            {
-                EditorUtility.DisplayDialog("エディタスクリプトコピー完了", 
-                    $"{copiedScripts}個のエディタスクリプトをコピーしました。\n" +
-                    "Assets/Editorフォルダで確認してください。\n\n" +
-                    "注意: Unity Toolbar Extenderライブラリが必要です。先に'Install Dependencies'を実行してください。", 
-                    "OK");
-            }
-            else
-            {
-                EditorUtility.DisplayDialog("エディタスクリプトコピー", 
-                    "エディタスクリプトは既に存在しています。", "OK");
-            }
-        }
-        
         [MenuItem(MENU_ROOT + "Copy License Files")]
         public static void CopyLicenseFiles()
         {
@@ -347,97 +303,7 @@ namespace Void2610.UnityTemplate.Editor
             var scriptPath = AssetDatabase.GUIDToAssetPath(scriptFiles[0]);
             return Path.GetDirectoryName(scriptPath);
         }
-        
-        private static int CopyUtilityScripts()
-        {
-            var targetPath = "Assets/Scripts/Utils";
-            CreateFolderRecursively(targetPath);
-            
-            // エディタ専用テンプレートを除外するパターン
-            var excludePatterns = new[] { "SceneSwitchLeftButton", "CreateTutorialScenes" };
-            
-            return CopyTemplateScripts(targetPath, excludePatterns);
-        }
-        
-        private static int CopyEditorScripts()
-        {
-            var targetPath = "Assets/Editor";
-            CreateFolderRecursively(targetPath);
-            
-            // エディタ専用テンプレートのみを対象とする
-            var includePatterns = new[] { "SceneSwitchLeftButton", "CreateTutorialScenes" };
-            
-            return CopyTemplateScripts(targetPath, null, includePatterns);
-        }
-        
-        /// <summary>
-        /// テンプレートファイルを自動検出してコピーする汎用メソッド
-        /// </summary>
-        /// <param name="targetPath">コピー先パス</param>
-        /// <param name="excludePatterns">除外するファイル名パターン</param>
-        /// <param name="includePatterns">含めるファイル名パターン（nullの場合は全て含める）</param>
-        /// <returns>コピーしたファイル数</returns>
-        private static int CopyTemplateScripts(string targetPath, string[] excludePatterns = null, string[] includePatterns = null)
-        {
-            var packagePath = GetPackagePath();
-            if (packagePath == null) return 0;
-            
-            var templatesPath = Path.Combine(packagePath, "ScriptTemplates");
-            if (!Directory.Exists(templatesPath)) return 0;
-            
-            var templateFiles = Directory.GetFiles(templatesPath, "*.template");
-            int copiedCount = 0;
-            
-            foreach (var templatePath in templateFiles)
-            {
-                var templateFileName = Path.GetFileName(templatePath);
-                var fileName = templateFileName.Replace(".template", "");
-                
-                // includePatterns が指定されている場合は、それに含まれるもののみを処理
-                if (includePatterns != null)
-                {
-                    bool shouldInclude = false;
-                    foreach (var pattern in includePatterns)
-                    {
-                        if (fileName.Contains(pattern))
-                        {
-                            shouldInclude = true;
-                            break;
-                        }
-                    }
-                    if (!shouldInclude) continue;
-                }
-                
-                // excludePatterns が指定されている場合は、それに含まれるものを除外
-                if (excludePatterns != null)
-                {
-                    bool shouldExclude = false;
-                    foreach (var pattern in excludePatterns)
-                    {
-                        if (fileName.Contains(pattern))
-                        {
-                            shouldExclude = true;
-                            break;
-                        }
-                    }
-                    if (shouldExclude) continue;
-                }
-                
-                var destPath = Path.Combine(targetPath, fileName).Replace('\\', '/');
-                
-                // コピー先が存在しない場合のみコピー
-                if (!File.Exists(destPath))
-                {
-                    var templateContent = File.ReadAllText(templatePath);
-                    File.WriteAllText(destPath, templateContent);
-                    copiedCount++;
-                    Debug.Log($"テンプレートからスクリプトをコピーしました: {templateFileName} → {fileName}");
-                }
-            }
-            
-            return copiedCount;
-        }
-        
+
         private static int CopyLicenseFilesFromTemplate()
         {
             var packagePath = GetPackagePath();
