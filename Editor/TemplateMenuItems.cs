@@ -149,8 +149,25 @@ namespace Void2610.UnityTemplate.Editor
         [MenuItem(MENU_ROOT + "Setup Utils Submodule")]
         public static void SetupUtilsSubmodule()
         {
+            SetupSubmodule("my-unity-utils", "https://github.com/void2610/my-unity-utils.git", "Utils");
+        }
+
+        [MenuItem(MENU_ROOT + "Setup SettingsSystem Submodule")]
+        public static void SetupSettingsSystemSubmodule()
+        {
+            SetupSubmodule("my-unity-settings", "https://github.com/void2610/my-unity-settings.git", "SettingsSystem");
+        }
+
+        /// <summary>
+        /// 汎用サブモジュールセットアップ
+        /// </summary>
+        /// <param name="submoduleName">サブモジュール名（リポジトリルートのフォルダ名）</param>
+        /// <param name="repoUrl">GitリポジトリURL</param>
+        /// <param name="linkName">Assets/Scripts/以下のシンボリックリンク名 兼 表示名</param>
+        private static void SetupSubmodule(string submoduleName, string repoUrl, string linkName)
+        {
             var projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-            var submodulePath = Path.Combine(projectRoot, "my-unity-utils");
+            var submodulePath = Path.Combine(projectRoot, submoduleName);
 
             // 1. Assets/Scriptsフォルダ作成
             if (!AssetDatabase.IsValidFolder("Assets/Scripts"))
@@ -160,15 +177,11 @@ namespace Void2610.UnityTemplate.Editor
             }
 
             // 2. submoduleとして既に登録済みか確認
-            if (IsSubmoduleRegistered("my-unity-utils"))
+            if (IsSubmoduleRegistered(submoduleName))
             {
-                Debug.Log("✓ Submodule already registered");
-
-                // submodule update を実行（最新化）
+                Debug.Log($"✓ {linkName} submodule already registered");
                 ExecuteGitCommandSync(projectRoot, "submodule update --init --recursive");
-
-                // シンボリックリンク処理へ
-                CreateSymbolicLinkIfNeeded();
+                CreateSubmoduleSymbolicLinkIfNeeded(submoduleName, linkName);
                 return;
             }
 
@@ -177,18 +190,15 @@ namespace Void2610.UnityTemplate.Editor
             {
                 bool isGitRepo = IsGitRepository(submodulePath);
                 string message = isGitRepo
-                    ? "my-unity-utils ディレクトリが既にgitリポジトリとして存在しています。\n\n削除してsubmoduleとして再追加しますか?"
-                    : "my-unity-utils ディレクトリが既に存在しています。\n\n削除してsubmoduleとして追加しますか?";
+                    ? $"{submoduleName} ディレクトリが既にgitリポジトリとして存在しています。\n\n削除してsubmoduleとして再追加しますか?"
+                    : $"{submoduleName} ディレクトリが既に存在しています。\n\n削除してsubmoduleとして追加しますか?";
 
-                bool shouldDelete = EditorUtility.DisplayDialog("確認", message, "削除して追加", "キャンセル");
-
-                if (!shouldDelete)
+                if (!EditorUtility.DisplayDialog("確認", message, "削除して追加", "キャンセル"))
                 {
-                    Debug.Log("Submodule setup cancelled by user");
+                    Debug.Log($"{linkName} submodule setup cancelled by user");
                     return;
                 }
 
-                // ディレクトリを削除
                 try
                 {
                     Directory.Delete(submodulePath, true);
@@ -196,35 +206,28 @@ namespace Void2610.UnityTemplate.Editor
                 }
                 catch (System.Exception e)
                 {
-                    EditorUtility.DisplayDialog("エラー",
-                        $"ディレクトリの削除に失敗しました:\n{e.Message}",
-                        "OK");
+                    EditorUtility.DisplayDialog("エラー", $"ディレクトリの削除に失敗しました:\n{e.Message}", "OK");
                     return;
                 }
             }
 
             // 4. .git/modules のクリーンアップ
-            CleanupGitModules("my-unity-utils");
+            CleanupGitModules(submoduleName);
 
             // 5. Git submoduleを追加
-            Debug.Log("Adding my-unity-utils as submodule...");
-            int exitCode = ExecuteGitCommandSync(projectRoot,
-                "submodule add https://github.com/void2610/my-unity-utils.git my-unity-utils");
+            Debug.Log($"Adding {submoduleName} as submodule...");
+            int exitCode = ExecuteGitCommandSync(projectRoot, $"submodule add {repoUrl} {submoduleName}");
 
             if (exitCode == 0)
             {
-                Debug.Log("✓ Submodule added");
-
-                // Submoduleを初期化
+                Debug.Log($"✓ {linkName} submodule added");
                 ExecuteGitCommandSync(projectRoot, "submodule update --init --recursive");
-
-                // シンボリックリンク処理へ
-                CreateSymbolicLinkIfNeeded();
+                CreateSubmoduleSymbolicLinkIfNeeded(submoduleName, linkName);
             }
             else
             {
                 EditorUtility.DisplayDialog("エラー",
-                    "Submoduleの追加に失敗しました。\nGitリポジトリが初期化されているか確認してください。",
+                    $"{linkName} Submoduleの追加に失敗しました。\nGitリポジトリが初期化されているか確認してください。",
                     "OK");
             }
         }
@@ -884,28 +887,29 @@ namespace Void2610.UnityTemplate.Editor
         }
 
         /// <summary>
-        /// シンボリックリンクが必要なら作成
+        /// 汎用シンボリックリンク作成
         /// </summary>
-        private static void CreateSymbolicLinkIfNeeded()
+        /// <param name="submoduleName">サブモジュール名（リポジトリルートのフォルダ名）</param>
+        /// <param name="linkName">Assets/Scripts/以下のシンボリックリンク名 兼 表示名</param>
+        private static void CreateSubmoduleSymbolicLinkIfNeeded(string submoduleName, string linkName)
         {
             var projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-            var submodulePath = Path.Combine(projectRoot, "my-unity-utils");
+            var submodulePath = Path.Combine(projectRoot, submoduleName);
             var scriptsPath = Path.Combine(Application.dataPath, "Scripts");
-            var utilsPath = Path.Combine(scriptsPath, "Utils");
+            var symlinkPath = Path.Combine(scriptsPath, linkName);
 
             // シンボリックリンクの存在確認
-            if (Directory.Exists(utilsPath) || File.Exists(utilsPath))
+            if (Directory.Exists(symlinkPath) || File.Exists(symlinkPath))
             {
-                // 既に存在する場合、submoduleへのリンクか確認
                 try
                 {
-                    var realPath = Path.GetFullPath(utilsPath);
+                    var realPath = Path.GetFullPath(symlinkPath);
                     var expectedPath = Path.GetFullPath(submodulePath);
 
                     if (realPath.Equals(expectedPath, System.StringComparison.OrdinalIgnoreCase))
                     {
-                        Debug.Log("✓ Symbolic link already exists and is correct");
-                        ShowSetupCompletedDialog();
+                        Debug.Log($"✓ {linkName} symbolic link already exists and is correct");
+                        ShowSubmoduleSetupCompletedDialog(submoduleName, linkName);
                         return;
                     }
                 }
@@ -915,22 +919,22 @@ namespace Void2610.UnityTemplate.Editor
                 }
 
                 EditorUtility.DisplayDialog("警告",
-                    "Assets/Scripts/Utils は既に存在しています。\n\n" +
+                    $"Assets/Scripts/{linkName} は既に存在しています。\n\n" +
                     "シンボリックリンク作成をスキップしました。\n" +
                     "手動で削除してから再実行してください。",
                     "OK");
                 return;
             }
 
-            Debug.Log("Creating symbolic link...");
-            var relativePath = Path.Combine("..", "..", "my-unity-utils");
-            bool symlinkCreated = CreateSymlink(utilsPath, relativePath);
+            Debug.Log($"Creating {linkName} symbolic link...");
+            var relativePath = Path.Combine("..", "..", submoduleName);
+            bool symlinkCreated = CreateSymlink(symlinkPath, relativePath);
 
             if (symlinkCreated)
             {
-                Debug.Log("✓ Symbolic link created: Assets/Scripts/Utils -> my-unity-utils");
+                Debug.Log($"✓ Symbolic link created: Assets/Scripts/{linkName} -> {submoduleName}");
                 AssetDatabase.Refresh();
-                ShowSetupCompletedDialog();
+                ShowSubmoduleSetupCompletedDialog(submoduleName, linkName);
             }
             else
             {
@@ -939,21 +943,21 @@ namespace Void2610.UnityTemplate.Editor
                     "Windows: 管理者権限が必要な場合があります\n" +
                     "macOS/Linux: ターミナルで手動実行してください\n\n" +
                     "手動コマンド:\n" +
-                    "ln -s ../../my-unity-utils Assets/Scripts/Utils",
+                    $"ln -s ../../{submoduleName} Assets/Scripts/{linkName}",
                     "OK");
             }
         }
 
         /// <summary>
-        /// セットアップ完了ダイアログを表示
+        /// 汎用セットアップ完了ダイアログを表示
         /// </summary>
-        private static void ShowSetupCompletedDialog()
+        private static void ShowSubmoduleSetupCompletedDialog(string submoduleName, string linkName)
         {
             EditorUtility.DisplayDialog("セットアップ完了",
-                "my-unity-utils のセットアップが完了しました！\n\n" +
-                "✓ Submodule追加: my-unity-utils/\n" +
-                "✓ シンボリックリンク作成: Assets/Scripts/Utils/\n\n" +
-                "Utilsスクリプトが利用可能になりました。",
+                $"{linkName} のセットアップが完了しました！\n\n" +
+                $"✓ Submodule追加: {submoduleName}/\n" +
+                $"✓ シンボリックリンク作成: Assets/Scripts/{linkName}/\n\n" +
+                $"{linkName}スクリプトが利用可能になりました。",
                 "OK");
         }
     }
