@@ -232,6 +232,106 @@ namespace Void2610.UnityTemplate.Editor
             }
         }
 
+        [MenuItem(MENU_ROOT + "Copy Config Files")]
+        public static void CopyConfigFiles()
+        {
+            var packagePath = GetPackagePath();
+
+            var configTemplatesPath = Path.Combine(packagePath, "ConfigTemplates");
+            var projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+
+            // コピー対象ファイルの定義（ソースファイル名, コピー先パス）
+            var filesToCopy = new (string sourceName, string destPath)[]
+            {
+                ("Directory.Build.props", Path.Combine(projectRoot, "Directory.Build.props")),
+                ("csc.rsp", Path.Combine(Application.dataPath, "csc.rsp"))
+            };
+
+            var copiedCount = 0;
+            var skippedCount = 0;
+
+            foreach (var (sourceName, destPath) in filesToCopy)
+            {
+                var sourcePath = Path.Combine(configTemplatesPath, sourceName);
+                var shouldCopy = CopyConfigFile(sourcePath, destPath, sourceName, ref skippedCount);
+                if (shouldCopy)
+                {
+                    copiedCount++;
+                }
+            }
+
+            AssetDatabase.Refresh();
+            ShowCopyConfigFilesResult(copiedCount, skippedCount);
+        }
+
+        /// <summary>
+        /// 設定ファイルを個別にコピーする
+        /// </summary>
+        /// <param name="sourcePath">コピー元パス</param>
+        /// <param name="destPath">コピー先パス</param>
+        /// <param name="fileName">ファイル名（表示用）</param>
+        /// <param name="skippedCount">スキップカウント（参照）</param>
+        /// <returns>コピーした場合true</returns>
+        private static bool CopyConfigFile(string sourcePath, string destPath, string fileName, ref int skippedCount)
+        {
+            if (File.Exists(destPath))
+            {
+                var overwrite = EditorUtility.DisplayDialog("ファイルが既に存在します",
+                    $"{fileName} は既に存在しています。\n\n上書きしますか？",
+                    "上書き", "スキップ");
+
+                if (!overwrite)
+                {
+                    Debug.Log($"スキップしました: {fileName}");
+                    skippedCount++;
+                    return false;
+                }
+            }
+
+            try
+            {
+                File.Copy(sourcePath, destPath, true);
+                Debug.Log($"✓ コピーしました: {fileName}");
+                return true;
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"ファイルのコピーに失敗しました: {fileName}\n{e.Message}");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 設定ファイルコピー結果を表示する
+        /// </summary>
+        /// <param name="copiedCount">コピーしたファイル数</param>
+        /// <param name="skippedCount">スキップしたファイル数</param>
+        private static void ShowCopyConfigFilesResult(int copiedCount, int skippedCount)
+        {
+            string message;
+
+            if (copiedCount > 0 && skippedCount > 0)
+            {
+                message = $"{copiedCount}個のファイルをコピーしました。\n{skippedCount}個のファイルをスキップしました。";
+            }
+            else if (copiedCount > 0)
+            {
+                message = $"{copiedCount}個の設定ファイルをコピーしました。\n\n" +
+                          "• Directory.Build.props: プロジェクトルート\n" +
+                          "• csc.rsp: Assets/";
+            }
+            else if (skippedCount > 0)
+            {
+                message = "すべてのファイルをスキップしました。";
+            }
+            else
+            {
+                message = "コピーするファイルがありませんでした。";
+            }
+
+            EditorUtility.DisplayDialog("設定ファイルコピー", message, "OK");
+        }
+
         [MenuItem(MENU_ROOT + "Copy License Files")]
         public static void CopyLicenseFiles()
         {

@@ -1,0 +1,8 @@
+<Project>
+    <PropertyGroup>
+        <LangVersion>preview</LangVersion>
+        <!-- bin/objをプロジェクト外のTempフォルダに出力 -->
+        <BaseIntermediateOutputPath>$(MSBuildThisFileDirectory)../Temp/obj/$(MSBuildProjectName)/</BaseIntermediateOutputPath>
+        <BaseOutputPath>$(MSBuildThisFileDirectory)../Temp/bin/$(MSBuildProjectName)/</BaseOutputPath>
+    </PropertyGroup>
+</Project>
