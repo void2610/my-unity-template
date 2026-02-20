@@ -633,7 +633,6 @@ namespace Void2610.UnityTemplate.Editor
             var folders = new[]
             {
                 "Assets/Scripts",
-                "Assets/Scripts/Utils",
                 "Assets/Sprites",
                 "Assets/Audio/BGM",
                 "Assets/Audio/SE",
