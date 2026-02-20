@@ -681,6 +681,119 @@ namespace Void2610.UnityTemplate.Editor
             SetupSubmodule("my-unity-settings", "https://github.com/void2610/my-unity-settings.git", "SettingsSystem");
         }
 
+        [MenuItem(MENU_ROOT + "Setup Analyzers Submodule")]
+        public static void SetupAnalyzersSubmodule()
+        {
+            var projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+            var submoduleName = "unity-analyzers";
+            var repoUrl = "https://github.com/void2610/unity-analyzers.git";
+            var submodulePath = Path.Combine(projectRoot, submoduleName);
+
+            // 1. サブモジュール登録済みチェック
+            if (IsSubmoduleRegistered(submoduleName))
+            {
+                Debug.Log($"✓ {submoduleName} サブモジュールは既に登録されています");
+                ExecuteGitCommandSync(projectRoot, "submodule update --init --recursive");
+                BuildAnalyzerDll(projectRoot, submoduleName);
+                return;
+            }
+
+            // 2. 既存ディレクトリの処理
+            if (Directory.Exists(submodulePath))
+            {
+                var isGitRepo = IsGitRepository(submodulePath);
+                var message = isGitRepo
+                    ? $"{submoduleName} ディレクトリが既にgitリポジトリとして存在しています。\n\n削除してsubmoduleとして再追加しますか?"
+                    : $"{submoduleName} ディレクトリが既に存在しています。\n\n削除してsubmoduleとして追加しますか?";
+
+                if (!EditorUtility.DisplayDialog("確認", message, "削除して追加", "キャンセル"))
+                {
+                    Debug.Log("Analyzers サブモジュールのセットアップがキャンセルされました");
+                    return;
+                }
+
+                try
+                {
+                    Directory.Delete(submodulePath, true);
+                    Debug.Log($"既存のディレクトリを削除しました: {submodulePath}");
+                }
+                catch (System.Exception e)
+                {
+                    EditorUtility.DisplayDialog("エラー", $"ディレクトリの削除に失敗しました:\n{e.Message}", "OK");
+                    return;
+                }
+            }
+
+            // 3. .git/modules クリーンアップ
+            CleanupGitModules(submoduleName);
+
+            // 4. Git submoduleを追加
+            Debug.Log($"{submoduleName} をサブモジュールとして追加中...");
+            var exitCode = ExecuteGitCommandSync(projectRoot, $"submodule add {repoUrl} {submoduleName}");
+
+            if (exitCode != 0)
+            {
+                EditorUtility.DisplayDialog("エラー",
+                    "Analyzers Submoduleの追加に失敗しました。\nGitリポジトリが初期化されているか確認してください。",
+                    "OK");
+                return;
+            }
+
+            Debug.Log($"✓ {submoduleName} サブモジュールを追加しました");
+
+            // 5. submodule update
+            ExecuteGitCommandSync(projectRoot, "submodule update --init --recursive");
+
+            // 6. アナライザーDLLをビルド
+            BuildAnalyzerDll(projectRoot, submoduleName);
+        }
+
+        /// <summary>
+        /// アナライザーDLLをビルドする
+        /// </summary>
+        /// <param name="projectRoot">Unityプロジェクトルート</param>
+        /// <param name="submoduleName">サブモジュール名</param>
+        private static void BuildAnalyzerDll(string projectRoot, string submoduleName)
+        {
+            var analyzerProjectPath = Path.Combine(projectRoot, submoduleName, "src", "Void2610.Unity.Analyzers");
+
+            if (!Directory.Exists(analyzerProjectPath))
+            {
+                EditorUtility.DisplayDialog("警告",
+                    $"アナライザープロジェクトが見つかりません:\n{analyzerProjectPath}\n\n" +
+                    "Submoduleは追加されましたが、DLLのビルドはスキップされました。",
+                    "OK");
+                return;
+            }
+
+            Debug.Log("アナライザーDLLをビルド中...");
+            var exitCode = ExecuteShellCommand("dotnet", $"build \"{analyzerProjectPath}\" -c Release");
+
+            if (exitCode == 0)
+            {
+                Debug.Log("✓ アナライザーDLLのビルドが完了しました");
+                AssetDatabase.Refresh();
+
+                EditorUtility.DisplayDialog("セットアップ完了",
+                    "Analyzers のセットアップが完了しました！\n\n" +
+                    $"✓ Submodule追加: {submoduleName}/\n" +
+                    "✓ アナライザーDLLビルド完了\n\n" +
+                    "Directory.Build.propsにアナライザー参照が設定されていれば、\n" +
+                    "IDEでカスタムアナライザーの警告が表示されるようになります。\n\n" +
+                    "「Copy Config Files」でDirectory.Build.propsを\nコピーしてください。",
+                    "OK");
+            }
+            else
+            {
+                EditorUtility.DisplayDialog("警告",
+                    "アナライザーDLLのビルドに失敗しました。\n\n" +
+                    "Submoduleは追加されましたが、手動でビルドが必要です:\n" +
+                    $"cd {analyzerProjectPath}\n" +
+                    "dotnet build -c Release",
+                    "OK");
+            }
+        }
+
         /// <summary>
         /// 汎用サブモジュールセットアップ
         /// </summary>
@@ -767,7 +880,9 @@ namespace Void2610.UnityTemplate.Editor
             var filesToCopy = new (string sourceName, string destPath)[]
             {
                 ("Directory.Build.props", Path.Combine(projectRoot, "Directory.Build.props")),
-                ("csc.rsp", Path.Combine(Application.dataPath, "csc.rsp"))
+                ("csc.rsp", Path.Combine(Application.dataPath, "csc.rsp")),
+                (".editorconfig", Path.Combine(projectRoot, ".editorconfig")),
+                ("FormatCheck.csproj", Path.Combine(projectRoot, "FormatCheck.csproj"))
             };
 
             var copiedCount = 0;
@@ -841,7 +956,9 @@ namespace Void2610.UnityTemplate.Editor
             {
                 message = $"{copiedCount}個の設定ファイルをコピーしました。\n\n" +
                           "• Directory.Build.props: プロジェクトルート\n" +
-                          "• csc.rsp: Assets/";
+                          "• csc.rsp: Assets/\n" +
+                          "• .editorconfig: プロジェクトルート\n" +
+                          "• FormatCheck.csproj: プロジェクトルート";
             }
             else if (skippedCount > 0)
             {

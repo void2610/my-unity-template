@@ -5,4 +5,10 @@
         <BaseIntermediateOutputPath>$(MSBuildThisFileDirectory)../Temp/obj/$(MSBuildProjectName)/</BaseIntermediateOutputPath>
         <BaseOutputPath>$(MSBuildThisFileDirectory)../Temp/bin/$(MSBuildProjectName)/</BaseOutputPath>
     </PropertyGroup>
+    <ItemGroup>
+        <!-- カスタムRoslynアナライザー（DLLが存在する場合のみ有効） -->
+        <Analyzer
+            Include="$(MSBuildThisFileDirectory)unity-analyzers/src/Void2610.Unity.Analyzers/bin/Release/netstandard2.0/Void2610.Unity.Analyzers.dll"
+            Condition="Exists('$(MSBuildThisFileDirectory)unity-analyzers/src/Void2610.Unity.Analyzers/bin/Release/netstandard2.0/Void2610.Unity.Analyzers.dll')" />
+    </ItemGroup>
 </Project>
