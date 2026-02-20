@@ -43,7 +43,9 @@ namespace Void2610.UnityTemplate.Editor
     {
         private const string MENU_ROOT = "Tools/Unity Template/";
         private const string PREF_KEY_INSTALL_STATE = "UnityTemplate_InstallState";
-        
+        private const string PREF_KEY_FULL_SETUP = "UnityTemplate_FullSetup";
+
+        private static bool _isFullSetupRunning = false;
         private static AddRequest currentAddRequest;
         private static System.Collections.Generic.Queue<string> packageQueue = new();
         private static bool isInstallingPackages = false;
@@ -56,6 +58,269 @@ namespace Void2610.UnityTemplate.Editor
         }
         
         
+        [MenuItem(MENU_ROOT + "Full Setup", false, 0)]
+        public static void FullSetup()
+        {
+            if (isInstallingPackages || _isFullSetupRunning)
+            {
+                EditorUtility.DisplayDialog("実行中",
+                    "セットアップが進行中です。完了までお待ちください。", "OK");
+                return;
+            }
+
+            bool proceed = EditorUtility.DisplayDialog("Full Setup",
+                "以下の手順を一括で実行します:\n\n" +
+                "1. フォルダ構成の作成\n" +
+                "2. UPMパッケージのインストール\n" +
+                "3. NuGetパッケージのインストール\n" +
+                "4. 設定ファイルのコピー\n" +
+                "5. Utils サブモジュールのセットアップ\n" +
+                "6. SettingsSystem サブモジュールのセットアップ\n" +
+                "7. Analyzers サブモジュールのセットアップ\n\n" +
+                "※ 既存ファイルは上書きされます。\n" +
+                "※ ドメインリロードが発生する場合があります。\n\n" +
+                "続行しますか？",
+                "開始", "キャンセル");
+
+            if (!proceed) return;
+
+            _isFullSetupRunning = true;
+            EditorPrefs.SetBool(PREF_KEY_FULL_SETUP, true);
+
+            Debug.Log("=== Full Setup を開始します ===");
+
+            // ステップ1: フォルダ構成作成（同期）
+            Debug.Log("[Full Setup 1/7] フォルダ構成を作成中...");
+            var folders = new[]
+            {
+                "Assets/Scripts",
+                "Assets/Sprites",
+                "Assets/Audio/BGM",
+                "Assets/Audio/SE",
+                "Assets/Materials",
+                "Assets/Prefabs",
+                "Assets/ScriptableObjects",
+                "Assets/Editor",
+                "Assets/Others"
+            };
+
+            foreach (var folder in folders)
+            {
+                CreateFolderRecursively(folder);
+            }
+            AssetDatabase.Refresh();
+            Debug.Log("✓ フォルダ構成の作成が完了しました");
+
+            // ステップ2: UPMパッケージインストール（非同期）
+            Debug.Log("[Full Setup 2/7] UPMパッケージのインストールを開始...");
+            var templateManifest = LoadTemplateManifest();
+            if (templateManifest == null)
+            {
+                Debug.LogError("テンプレートマニフェストの読み込みに失敗しました");
+                CleanupFullSetupState();
+                return;
+            }
+
+            var currentManifest = LoadCurrentManifest();
+            var packagesToInstall = GetPackagesToInstall(templateManifest, currentManifest);
+
+            if (packagesToInstall.Count > 0)
+            {
+                // UPMインストールが非同期で進む → 完了後にInstallNextPackageからContinueFullSetupAfterUpmが呼ばれる
+                StartDependencyInstallation(packagesToInstall);
+            }
+            else
+            {
+                Debug.Log("✓ UPMパッケージはすべてインストール済みです");
+                // UPM不要なら直接次のステップへ
+                EditorApplication.delayCall += ContinueFullSetupAfterUpm;
+            }
+        }
+
+        /// <summary>
+        /// UPMインストール完了後に残りのセットアップを実行する
+        /// </summary>
+        private static void ContinueFullSetupAfterUpm()
+        {
+            if (!_isFullSetupRunning && !EditorPrefs.GetBool(PREF_KEY_FULL_SETUP, false))
+                return;
+
+            _isFullSetupRunning = true;
+
+            try
+            {
+                // ステップ3: NuGetパッケージインストール
+                Debug.Log("[Full Setup 3/7] NuGetパッケージのインストール中...");
+                if (IsNugetForUnityInstalled())
+                {
+                    var templatePackages = LoadNugetTemplatePackages();
+                    if (templatePackages != null && templatePackages.Count > 0)
+                    {
+                        var packagesConfigPath = GetNugetPackagesConfigPath();
+                        if (!string.IsNullOrEmpty(packagesConfigPath))
+                        {
+                            var installedPackages = GetInstalledNugetPackages(packagesConfigPath);
+                            var nugetToInstall = templatePackages
+                                .Where(p => !installedPackages.ContainsKey(p.Key))
+                                .ToList();
+
+                            int nugetSuccess = 0;
+                            int nugetFail = 0;
+                            foreach (var package in nugetToInstall)
+                            {
+                                bool success = InstallNugetPackage(package.Key, package.Value);
+                                if (success) nugetSuccess++;
+                                else nugetFail++;
+                            }
+
+                            if (nugetToInstall.Count > 0)
+                                Debug.Log($"✓ NuGetパッケージ: {nugetSuccess}個成功, {nugetFail}個失敗");
+                            else
+                                Debug.Log("✓ NuGetパッケージはすべてインストール済みです");
+                        }
+                    }
+                }
+                else
+                {
+                    Debug.LogWarning("⚠ NuGetForUnityが未インストールのため、NuGetパッケージのインストールをスキップしました");
+                }
+
+                // ステップ4: 設定ファイルコピー（上書き確認なし）
+                Debug.Log("[Full Setup 4/7] 設定ファイルをコピー中...");
+                var packagePath = GetPackagePath();
+                if (packagePath != null)
+                {
+                    var configTemplatesPath = Path.Combine(packagePath, "ConfigTemplates");
+                    var projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+
+                    var filesToCopy = new (string sourceName, string destPath)[]
+                    {
+                        ("Directory.Build.props", Path.Combine(projectRoot, "Directory.Build.props")),
+                        ("csc.rsp", Path.Combine(Application.dataPath, "csc.rsp")),
+                        (".editorconfig", Path.Combine(projectRoot, ".editorconfig")),
+                        ("FormatCheck.csproj", Path.Combine(projectRoot, "FormatCheck.csproj"))
+                    };
+
+                    int configCopied = 0;
+                    foreach (var (sourceName, destPath) in filesToCopy)
+                    {
+                        var sourcePath = Path.Combine(configTemplatesPath, sourceName);
+                        try
+                        {
+                            if (File.Exists(sourcePath))
+                            {
+                                File.Copy(sourcePath, destPath, true);
+                                Debug.Log($"  ✓ コピーしました: {sourceName}");
+                                configCopied++;
+                            }
+                        }
+                        catch (System.Exception e)
+                        {
+                            Debug.LogError($"  ✗ コピー失敗: {sourceName} - {e.Message}");
+                        }
+                    }
+                    Debug.Log($"✓ 設定ファイル: {configCopied}個コピーしました");
+                }
+
+                // ステップ5: Utils サブモジュール
+                Debug.Log("[Full Setup 5/7] Utils サブモジュールをセットアップ中...");
+                SetupSubmodule("my-unity-utils", "https://github.com/void2610/my-unity-utils.git", "Utils");
+
+                // ステップ6: SettingsSystem サブモジュール
+                Debug.Log("[Full Setup 6/7] SettingsSystem サブモジュールをセットアップ中...");
+                SetupSubmodule("my-unity-settings", "https://github.com/void2610/my-unity-settings.git", "SettingsSystem");
+
+                // ステップ7: Analyzers サブモジュール
+                Debug.Log("[Full Setup 7/7] Analyzers サブモジュールをセットアップ中...");
+                SetupAnalyzersSubmoduleInternal();
+
+                // 最終リフレッシュ
+                AssetDatabase.Refresh();
+
+                Debug.Log("=== Full Setup が完了しました ===");
+                EditorUtility.DisplayDialog("Full Setup 完了",
+                    "すべてのセットアップが完了しました！\n\n" +
+                    "✓ フォルダ構成の作成\n" +
+                    "✓ UPMパッケージのインストール\n" +
+                    "✓ NuGetパッケージのインストール\n" +
+                    "✓ 設定ファイルのコピー\n" +
+                    "✓ Utils サブモジュール\n" +
+                    "✓ SettingsSystem サブモジュール\n" +
+                    "✓ Analyzers サブモジュール\n\n" +
+                    "詳細はConsoleログを確認してください。",
+                    "OK");
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"Full Setup でエラーが発生しました: {e.Message}\n{e.StackTrace}");
+                EditorUtility.DisplayDialog("Full Setup エラー",
+                    $"セットアップ中にエラーが発生しました:\n{e.Message}\n\n" +
+                    "詳細はConsoleログを確認してください。",
+                    "OK");
+            }
+            finally
+            {
+                CleanupFullSetupState();
+            }
+        }
+
+        /// <summary>
+        /// Analyzersサブモジュールの内部セットアップ（Full Setup用）
+        /// </summary>
+        private static void SetupAnalyzersSubmoduleInternal()
+        {
+            var projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+            var submoduleName = "unity-analyzers";
+            var repoUrl = "https://github.com/void2610/unity-analyzers.git";
+            var submodulePath = Path.Combine(projectRoot, submoduleName);
+
+            if (IsSubmoduleRegistered(submoduleName))
+            {
+                Debug.Log($"✓ {submoduleName} サブモジュールは既に登録されています");
+                ExecuteGitCommandSync(projectRoot, "submodule update --init --recursive");
+                BuildAnalyzerDll(projectRoot, submoduleName);
+                return;
+            }
+
+            if (Directory.Exists(submodulePath))
+            {
+                try
+                {
+                    Directory.Delete(submodulePath, true);
+                    Debug.Log($"既存のディレクトリを削除しました: {submodulePath}");
+                }
+                catch (System.Exception e)
+                {
+                    Debug.LogError($"ディレクトリの削除に失敗しました: {e.Message}");
+                    return;
+                }
+            }
+
+            CleanupGitModules(submoduleName);
+
+            Debug.Log($"{submoduleName} をサブモジュールとして追加中...");
+            var exitCode = ExecuteGitCommandSync(projectRoot, $"submodule add {repoUrl} {submoduleName}");
+
+            if (exitCode != 0)
+            {
+                Debug.LogError("Analyzers Submoduleの追加に失敗しました");
+                return;
+            }
+
+            Debug.Log($"✓ {submoduleName} サブモジュールを追加しました");
+            ExecuteGitCommandSync(projectRoot, "submodule update --init --recursive");
+            BuildAnalyzerDll(projectRoot, submoduleName);
+        }
+
+        /// <summary>
+        /// フルセットアップ状態をクリアする
+        /// </summary>
+        private static void CleanupFullSetupState()
+        {
+            _isFullSetupRunning = false;
+            EditorPrefs.DeleteKey(PREF_KEY_FULL_SETUP);
+        }
+
         [MenuItem(MENU_ROOT + "Install UPM Packages")]
         public static void InstallDependencies()
         {
@@ -758,10 +1023,17 @@ namespace Void2610.UnityTemplate.Editor
 
             if (!Directory.Exists(analyzerProjectPath))
             {
-                EditorUtility.DisplayDialog("警告",
-                    $"アナライザープロジェクトが見つかりません:\n{analyzerProjectPath}\n\n" +
-                    "Submoduleは追加されましたが、DLLのビルドはスキップされました。",
-                    "OK");
+                if (!_isFullSetupRunning)
+                {
+                    EditorUtility.DisplayDialog("警告",
+                        $"アナライザープロジェクトが見つかりません:\n{analyzerProjectPath}\n\n" +
+                        "Submoduleは追加されましたが、DLLのビルドはスキップされました。",
+                        "OK");
+                }
+                else
+                {
+                    Debug.LogWarning($"⚠ アナライザープロジェクトが見つかりません: {analyzerProjectPath}");
+                }
                 return;
             }
 
@@ -771,25 +1043,34 @@ namespace Void2610.UnityTemplate.Editor
             if (exitCode == 0)
             {
                 Debug.Log("✓ アナライザーDLLのビルドが完了しました");
-                AssetDatabase.Refresh();
-
-                EditorUtility.DisplayDialog("セットアップ完了",
-                    "Analyzers のセットアップが完了しました！\n\n" +
-                    $"✓ Submodule追加: {submoduleName}/\n" +
-                    "✓ アナライザーDLLビルド完了\n\n" +
-                    "Directory.Build.propsにアナライザー参照が設定されていれば、\n" +
-                    "IDEでカスタムアナライザーの警告が表示されるようになります。\n\n" +
-                    "「Copy Config Files」でDirectory.Build.propsを\nコピーしてください。",
-                    "OK");
+                if (!_isFullSetupRunning)
+                {
+                    AssetDatabase.Refresh();
+                    EditorUtility.DisplayDialog("セットアップ完了",
+                        "Analyzers のセットアップが完了しました！\n\n" +
+                        $"✓ Submodule追加: {submoduleName}/\n" +
+                        "✓ アナライザーDLLビルド完了\n\n" +
+                        "Directory.Build.propsにアナライザー参照が設定されていれば、\n" +
+                        "IDEでカスタムアナライザーの警告が表示されるようになります。\n\n" +
+                        "「Copy Config Files」でDirectory.Build.propsを\nコピーしてください。",
+                        "OK");
+                }
             }
             else
             {
-                EditorUtility.DisplayDialog("警告",
-                    "アナライザーDLLのビルドに失敗しました。\n\n" +
-                    "Submoduleは追加されましたが、手動でビルドが必要です:\n" +
-                    $"cd {analyzerProjectPath}\n" +
-                    "dotnet build -c Release",
-                    "OK");
+                if (!_isFullSetupRunning)
+                {
+                    EditorUtility.DisplayDialog("警告",
+                        "アナライザーDLLのビルドに失敗しました。\n\n" +
+                        "Submoduleは追加されましたが、手動でビルドが必要です:\n" +
+                        $"cd {analyzerProjectPath}\n" +
+                        "dotnet build -c Release",
+                        "OK");
+                }
+                else
+                {
+                    Debug.LogWarning("⚠ アナライザーDLLのビルドに失敗しました。手動でビルドしてください。");
+                }
             }
         }
 
@@ -823,15 +1104,18 @@ namespace Void2610.UnityTemplate.Editor
             // 3. ワーキングディレクトリが存在する場合の処理
             if (Directory.Exists(submodulePath))
             {
-                bool isGitRepo = IsGitRepository(submodulePath);
-                string message = isGitRepo
-                    ? $"{submoduleName} ディレクトリが既にgitリポジトリとして存在しています。\n\n削除してsubmoduleとして再追加しますか?"
-                    : $"{submoduleName} ディレクトリが既に存在しています。\n\n削除してsubmoduleとして追加しますか?";
-
-                if (!EditorUtility.DisplayDialog("確認", message, "削除して追加", "キャンセル"))
+                if (!_isFullSetupRunning)
                 {
-                    Debug.Log($"{linkName} submodule setup cancelled by user");
-                    return;
+                    bool isGitRepo = IsGitRepository(submodulePath);
+                    string message = isGitRepo
+                        ? $"{submoduleName} ディレクトリが既にgitリポジトリとして存在しています。\n\n削除してsubmoduleとして再追加しますか?"
+                        : $"{submoduleName} ディレクトリが既に存在しています。\n\n削除してsubmoduleとして追加しますか?";
+
+                    if (!EditorUtility.DisplayDialog("確認", message, "削除して追加", "キャンセル"))
+                    {
+                        Debug.Log($"{linkName} submodule setup cancelled by user");
+                        return;
+                    }
                 }
 
                 try
@@ -861,9 +1145,13 @@ namespace Void2610.UnityTemplate.Editor
             }
             else
             {
-                EditorUtility.DisplayDialog("エラー",
-                    $"{linkName} Submoduleの追加に失敗しました。\nGitリポジトリが初期化されているか確認してください。",
-                    "OK");
+                Debug.LogError($"{linkName} Submoduleの追加に失敗しました");
+                if (!_isFullSetupRunning)
+                {
+                    EditorUtility.DisplayDialog("エラー",
+                        $"{linkName} Submoduleの追加に失敗しました。\nGitリポジトリが初期化されているか確認してください。",
+                        "OK");
+                }
             }
         }
 
@@ -911,7 +1199,7 @@ namespace Void2610.UnityTemplate.Editor
         /// <returns>コピーした場合true</returns>
         private static bool CopyConfigFile(string sourcePath, string destPath, string fileName, ref int skippedCount)
         {
-            if (File.Exists(destPath))
+            if (File.Exists(destPath) && !_isFullSetupRunning)
             {
                 var overwrite = EditorUtility.DisplayDialog("ファイルが既に存在します",
                     $"{fileName} は既に存在しています。\n\n上書きしますか？",
@@ -945,6 +1233,8 @@ namespace Void2610.UnityTemplate.Editor
         /// <param name="skippedCount">スキップしたファイル数</param>
         private static void ShowCopyConfigFilesResult(int copiedCount, int skippedCount)
         {
+            if (_isFullSetupRunning) return;
+
             string message;
 
             if (copiedCount > 0 && skippedCount > 0)
@@ -1268,18 +1558,27 @@ namespace Void2610.UnityTemplate.Editor
                 // 全てのパッケージインストール完了
                 EditorUtility.ClearProgressBar();
                 isInstallingPackages = false;
-                
+
                 // インストール状態をクリア
                 ClearInstallationState();
-                
-                Debug.Log("依存関係のインストールが完了しました");
-                
+
+                Debug.Log("✓ UPMパッケージのインストールが完了しました");
+
+                // フルセットアップ中の場合は残りのステップへ継続
+                if (_isFullSetupRunning || EditorPrefs.GetBool(PREF_KEY_FULL_SETUP, false))
+                {
+                    _isFullSetupRunning = true;
+                    skippedPackagesCount = 0;
+                    EditorApplication.delayCall += ContinueFullSetupAfterUpm;
+                    return;
+                }
+
                 var message = "依存関係のインストールが完了しました。\n\n";
                 if (skippedPackagesCount > 0)
                 {
                     message += $"注意: {skippedPackagesCount}個のパッケージは互換性の問題でスキップされました。\n\n";
                 }
-                
+
                 message += "次の手順:\n" +
                           "1. NuGetForUnityが追加されました\n" +
                           "2. Window > NuGetForUnity を開いて 'R3' をインストール\n" +
@@ -1287,16 +1586,16 @@ namespace Void2610.UnityTemplate.Editor
                           "   - https://github.com/syskentokyo/unitylicensemaster/releases\n" +
                           "   - UnityPackageをダウンロード・インポート\n" +
                           "4. 'Copy License Files'でライセンス管理開始";
-                
-                bool openLicenseMaster = EditorUtility.DisplayDialog("インストール完了", 
-                    message + "\n\nLicenseMasterのダウンロードページを開きますか？", 
+
+                bool openLicenseMaster = EditorUtility.DisplayDialog("インストール完了",
+                    message + "\n\nLicenseMasterのダウンロードページを開きますか？",
                     "ページを開く", "後で");
-                
+
                 if (openLicenseMaster)
                 {
                     Application.OpenURL("https://github.com/syskentokyo/unitylicensemaster/releases");
                 }
-                
+
                 ShowPostInstallInstructions();
                 skippedPackagesCount = 0; // リセット
                 return;
@@ -1392,30 +1691,41 @@ namespace Void2610.UnityTemplate.Editor
         
         private static void RestoreInstallationStateAfterReload()
         {
+            // フルセットアップフラグの復元
+            if (EditorPrefs.GetBool(PREF_KEY_FULL_SETUP, false))
+            {
+                _isFullSetupRunning = true;
+            }
+
             // EditorPrefsから状態を復元
             var stateJson = EditorPrefs.GetString(PREF_KEY_INSTALL_STATE, "");
             if (string.IsNullOrEmpty(stateJson))
             {
+                // UPMキューが空だがフルセットアップが進行中の場合、残りのステップへ継続
+                if (_isFullSetupRunning)
+                {
+                    EditorApplication.delayCall += ContinueFullSetupAfterUpm;
+                }
                 return;
             }
-            
+
             try
             {
                 var state = JsonUtility.FromJson<InstallationState>(stateJson);
                 if (state != null && state.isInstalling && state.remainingPackages.Count > 0)
                 {
                     Debug.Log($"=== パッケージインストールを再開します（残り: {state.remainingPackages.Count}個）===");
-                    
+
                     // キューを復元
                     packageQueue.Clear();
                     foreach (var package in state.remainingPackages)
                     {
                         packageQueue.Enqueue(package);
                     }
-                    
+
                     isInstallingPackages = true;
                     totalPackagesToInstall = state.totalPackages;
-                    
+
                     // 少し待ってからインストールを再開
                     EditorApplication.delayCall += () =>
                     {
@@ -1423,11 +1733,21 @@ namespace Void2610.UnityTemplate.Editor
                         InstallNextPackage();
                     };
                 }
+                else if (_isFullSetupRunning)
+                {
+                    // UPMキューは空だがフルセットアップが進行中
+                    ClearInstallationState();
+                    EditorApplication.delayCall += ContinueFullSetupAfterUpm;
+                }
             }
             catch (System.Exception e)
             {
                 Debug.LogError($"インストール状態の復元に失敗しました: {e.Message}");
                 ClearInstallationState();
+                if (_isFullSetupRunning)
+                {
+                    CleanupFullSetupState();
+                }
             }
         }
         
@@ -1459,6 +1779,7 @@ namespace Void2610.UnityTemplate.Editor
             EditorUtility.ClearProgressBar();
 
             ClearInstallationState();
+            CleanupFullSetupState();
 
             EditorUtility.DisplayDialog("キャンセル完了",
                 "依存関係のインストールをキャンセルしました。", "OK");
@@ -1672,7 +1993,10 @@ namespace Void2610.UnityTemplate.Editor
             if (symlinkCreated)
             {
                 Debug.Log($"✓ Symbolic link created: Assets/Scripts/{linkName} -> {submoduleName}");
-                AssetDatabase.Refresh();
+                if (!_isFullSetupRunning)
+                {
+                    AssetDatabase.Refresh();
+                }
                 ShowSubmoduleSetupCompletedDialog(submoduleName, linkName);
             }
             else
@@ -1692,6 +2016,8 @@ namespace Void2610.UnityTemplate.Editor
         /// </summary>
         private static void ShowSubmoduleSetupCompletedDialog(string submoduleName, string linkName)
         {
+            if (_isFullSetupRunning) return;
+
             EditorUtility.DisplayDialog("セットアップ完了",
                 $"{linkName} のセットアップが完了しました！\n\n" +
                 $"✓ Submodule追加: {submoduleName}/\n" +
