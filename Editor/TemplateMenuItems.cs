@@ -198,7 +198,8 @@ namespace Void2610.UnityTemplate.Editor
                         ("Directory.Build.props", Path.Combine(projectRoot, "Directory.Build.props")),
                         ("csc.rsp", Path.Combine(Application.dataPath, "csc.rsp")),
                         (".editorconfig", Path.Combine(projectRoot, ".editorconfig")),
-                        ("FormatCheck.csproj", Path.Combine(projectRoot, "FormatCheck.csproj"))
+                        ("FormatCheck.csproj", Path.Combine(projectRoot, "FormatCheck.csproj")),
+                        ("CLAUDE.md", Path.Combine(projectRoot, "CLAUDE.md"))
                     };
 
                     int configCopied = 0;
@@ -1169,7 +1170,8 @@ namespace Void2610.UnityTemplate.Editor
                 ("Directory.Build.props", Path.Combine(projectRoot, "Directory.Build.props")),
                 ("csc.rsp", Path.Combine(Application.dataPath, "csc.rsp")),
                 (".editorconfig", Path.Combine(projectRoot, ".editorconfig")),
-                ("FormatCheck.csproj", Path.Combine(projectRoot, "FormatCheck.csproj"))
+                ("FormatCheck.csproj", Path.Combine(projectRoot, "FormatCheck.csproj")),
+                ("CLAUDE.md", Path.Combine(projectRoot, "CLAUDE.md"))
             };
 
             var copiedCount = 0;
@@ -1247,7 +1249,8 @@ namespace Void2610.UnityTemplate.Editor
                           "• Directory.Build.props: プロジェクトルート\n" +
                           "• csc.rsp: Assets/\n" +
                           "• .editorconfig: プロジェクトルート\n" +
-                          "• FormatCheck.csproj: プロジェクトルート";
+                          "• FormatCheck.csproj: プロジェクトルート\n" +
+                          "• CLAUDE.md: プロジェクトルート";
             }
             else if (skippedCount > 0)
             {
