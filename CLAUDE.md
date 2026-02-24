@@ -28,7 +28,7 @@ This is a Unity Package Manager (UPM) compatible template package for rapid Unit
 - Uses AssetDatabase for file access (not Resources folder to avoid build inclusion)
 - Handles Unity 6 compatibility by automatically skipping incompatible packages
 - Namespace: `Void2610.UnityTemplate.Editor`
-- Classes: `TemplateManifestData`, `ManifestData`, `InstallationState`, `TemplateMenuItems`
+- Classes: `TemplateManifestData`, `ManifestData`, `InstallationState`, `TemplateConfigData`, `SubmoduleConfig`, `AnalyzersConfig`, `ConfigFileEntry`, `TemplateMenuItems`
 - Key Methods:
   - `InstallDependencies()`: Package installation
   - `SetupUtilsSubmodule()`: **New** - Automated submodule + symlink setup
@@ -40,6 +40,17 @@ This is a Unity Package Manager (UPM) compatible template package for rapid Unit
   - `packages`: Standard Unity packages (URP, TextMeshPro, Input System, Rider IDE)
   - `gitPackages`: Git-based packages (R3, UniTask, VContainer, LitMotion, UI Effect libraries)
   - `testables`: Packages available for testing
+
+**template-config.json** (`Editor/template-config.json`)
+- Central configuration file for all template settings (editable by other developers)
+- Settings:
+  - `folderStructure`: Array of folder paths to create (e.g. `Assets/Scripts`, `Assets/Sprites`)
+  - `submodules`: Array of Git submodules with `name`, `url`, `linkName` for each
+  - `analyzers`: Analyzer submodule settings (`submoduleName`, `url`, `projectPath`)
+  - `configFiles`: Array of config files to copy with `source` and `destination` (`projectRoot` or `assets`)
+  - `licenseFolderPath`: Destination folder for license files
+- All values have sensible defaults in C# classes; if the file is missing or incomplete, defaults are used
+- Loaded by `LoadTemplateConfig()` method with fallback to `TemplateConfigData` defaults
 
 **my-unity-utils Submodule** (external repository)
 - **Repository:** https://github.com/void2610/my-unity-utils
@@ -104,6 +115,11 @@ Tools > Unity Template > Copy License Files        # Copy license assets for Lic
 # Modify dependencies
 # Edit Editor/template-manifest.json to add/remove packages
 # Test with "Install Dependencies" menu item
+
+# Customize project settings
+# Edit Editor/template-config.json to change folders, submodules, config files, etc.
+# Test with "Full Setup" or individual menu items
+
 # Commit and push changes to update template
 ```
 

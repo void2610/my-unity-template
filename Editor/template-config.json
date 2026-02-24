@@ -1,0 +1,53 @@
+{
+  "folderStructure": [
+    "Assets/Scripts",
+    "Assets/Sprites",
+    "Assets/Audio/BGM",
+    "Assets/Audio/SE",
+    "Assets/Materials",
+    "Assets/Prefabs",
+    "Assets/ScriptableObjects",
+    "Assets/Editor",
+    "Assets/Others"
+  ],
+  "submodules": [
+    {
+      "name": "my-unity-utils",
+      "url": "https://github.com/void2610/my-unity-utils.git",
+      "linkName": "Utils"
+    },
+    {
+      "name": "my-unity-settings",
+      "url": "https://github.com/void2610/my-unity-settings.git",
+      "linkName": "SettingsSystem"
+    }
+  ],
+  "analyzers": {
+    "submoduleName": "unity-analyzers",
+    "url": "https://github.com/void2610/unity-analyzers.git",
+    "projectPath": "src/Void2610.Unity.Analyzers"
+  },
+  "configFiles": [
+    {
+      "source": "Directory.Build.props",
+      "destination": "projectRoot"
+    },
+    {
+      "source": "csc.rsp",
+      "destination": "assets"
+    },
+    {
+      "source": ".editorconfig",
+      "destination": "projectRoot"
+    },
+    {
+      "source": "FormatCheck.csproj",
+      "destination": "projectRoot"
+    },
+    {
+      "source": "CLAUDE.md",
+      "destination": "projectRoot"
+    }
+  ],
+  "licenseFolderPath": "Assets/LicenseMaster"
+}
