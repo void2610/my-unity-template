@@ -35,15 +35,12 @@ This is a Unity Package Manager (UPM) compatible template package for rapid Unit
   - `CreateSymlink()`: **New** - Cross-platform symlink creation
   - `ExecuteGitCommandSync()`: **New** - Git command execution helper
 
-**template-manifest.json** (`Editor/template-manifest.json`)
-- Defines packages to install in structured format:
-  - `packages`: Standard Unity packages (URP, TextMeshPro, Input System, Rider IDE)
-  - `gitPackages`: Git-based packages (R3, UniTask, VContainer, LitMotion, UI Effect libraries)
-  - `testables`: Packages available for testing
-
 **template-config.json** (`Editor/template-config.json`)
 - Central configuration file for all template settings (editable by other developers)
 - Settings:
+  - `packages`: Standard Unity packages (URP, TextMeshPro, Input System, Rider IDE)
+  - `gitPackages`: Git-based packages (R3, UniTask, VContainer, LitMotion, UI Effect libraries)
+  - `testables`: Packages available for testing
   - `folderStructure`: Array of folder paths to create (e.g. `Assets/Scripts`, `Assets/Sprites`)
   - `submodules`: Array of Git submodules with `name`, `url`, `linkName` for each
   - `analyzers`: Analyzer submodule settings (`submoduleName`, `url`, `projectPath`)
@@ -89,7 +86,7 @@ This is a Unity Package Manager (UPM) compatible template package for rapid Unit
 All functionality accessed via Unity Editor menus under `Tools > Unity Template`:
 
 ```
-Tools > Unity Template > Install Dependencies      # Install all packages from template-manifest.json
+Tools > Unity Template > Install Dependencies      # Install all packages from template-config.json
 Tools > Unity Template > Create Folder Structure   # Create standard project folders
 Tools > Unity Template > Setup Utils Submodule     # **NEW:** Add my-unity-utils submodule + create symlink
 Tools > Unity Template > Copy Utility Scripts      # (Legacy) Copy .cs.template files - deprecated in favor of submodule
@@ -112,12 +109,8 @@ Tools > Unity Template > Copy License Files        # Copy license assets for Lic
 # Unity Editor > Window > Package Manager > + > Add package from git URL
 # Use: https://github.com/void2610/my-unity-template.git
 
-# Modify dependencies
-# Edit Editor/template-manifest.json to add/remove packages
-# Test with "Install Dependencies" menu item
-
 # Customize project settings
-# Edit Editor/template-config.json to change folders, submodules, config files, etc.
+# Edit Editor/template-config.json to change packages, folders, submodules, config files, etc.
 # Test with "Full Setup" or individual menu items
 
 # Commit and push changes to update template

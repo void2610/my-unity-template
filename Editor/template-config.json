@@ -1,4 +1,28 @@
 {
+  "packages": [
+    "com.unity.render-pipelines.universal",
+    "com.unity.textmeshpro",
+    "com.unity.ide.rider",
+    "com.unity.inputsystem"
+  ],
+  "gitPackages": [
+    "https://github.com/GlitchEnzo/NuGetForUnity.git?path=/src/NuGetForUnity",
+    "https://github.com/Cysharp/R3.git?path=src/R3.Unity/Assets/R3.Unity",
+    "https://github.com/Cysharp/UniTask.git?path=src/UniTask/Assets/Plugins/UniTask",
+    "https://github.com/mob-sakai/UIEffect.git?path=Packages/src",
+    "https://github.com/mob-sakai/UnmaskForUGUI.git",
+    "https://github.com/naichilab/unityroom-client-library.git?path=Assets/unityroom",
+    "https://github.com/hadashiA/VContainer.git?path=VContainer/Assets/VContainer",
+    "https://github.com/AnnulusGames/LitMotion.git?path=src/LitMotion/Assets/LitMotion",
+    "https://github.com/Yusuke57/UnityToolbarExtension.git",
+    "https://github.com/Cysharp/ZLogger.git?path=src/ZLogger.Unity/Assets/ZLogger.Unity",
+    "https://github.com/Cysharp/CsprojModifier.git?path=src/CsprojModifier/Assets/CsprojModifier",
+    "https://github.com/hatayama/uLoopMCP.git?path=/Packages/src"
+  ],
+  "testables": [
+    "com.unity.inputsystem",
+    "com.unity.ugui"
+  ],
   "folderStructure": [
     "Assets/Scripts",
     "Assets/Sprites",

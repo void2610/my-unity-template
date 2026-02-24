@@ -12,14 +12,6 @@ using System.Xml.Linq;
 namespace Void2610.UnityTemplate.Editor
 {
     [System.Serializable]
-    public class TemplateManifestData
-    {
-        public string[] packages = new string[0];
-        public string[] gitPackages = new string[0];
-        public string[] testables = new string[0];
-    }
-
-    [System.Serializable]
     public class ManifestData
     {
         public Dictionary<string, string> dependencies = new();
@@ -61,6 +53,33 @@ namespace Void2610.UnityTemplate.Editor
     [System.Serializable]
     public class TemplateConfigData
     {
+        public string[] packages = new[]
+        {
+            "com.unity.render-pipelines.universal",
+            "com.unity.textmeshpro",
+            "com.unity.ide.rider",
+            "com.unity.inputsystem"
+        };
+        public string[] gitPackages = new[]
+        {
+            "https://github.com/GlitchEnzo/NuGetForUnity.git?path=/src/NuGetForUnity",
+            "https://github.com/Cysharp/R3.git?path=src/R3.Unity/Assets/R3.Unity",
+            "https://github.com/Cysharp/UniTask.git?path=src/UniTask/Assets/Plugins/UniTask",
+            "https://github.com/mob-sakai/UIEffect.git?path=Packages/src",
+            "https://github.com/mob-sakai/UnmaskForUGUI.git",
+            "https://github.com/naichilab/unityroom-client-library.git?path=Assets/unityroom",
+            "https://github.com/hadashiA/VContainer.git?path=VContainer/Assets/VContainer",
+            "https://github.com/AnnulusGames/LitMotion.git?path=src/LitMotion/Assets/LitMotion",
+            "https://github.com/Yusuke57/UnityToolbarExtension.git",
+            "https://github.com/Cysharp/ZLogger.git?path=src/ZLogger.Unity/Assets/ZLogger.Unity",
+            "https://github.com/Cysharp/CsprojModifier.git?path=src/CsprojModifier/Assets/CsprojModifier",
+            "https://github.com/hatayama/uLoopMCP.git?path=/Packages/src"
+        };
+        public string[] testables = new[]
+        {
+            "com.unity.inputsystem",
+            "com.unity.ugui"
+        };
         public string[] folderStructure = new[]
         {
             "Assets/Scripts",
@@ -171,16 +190,9 @@ namespace Void2610.UnityTemplate.Editor
             // ステップ2: UPMパッケージインストール（非同期）
             currentStep++;
             Debug.Log($"[Full Setup {currentStep}/{totalSteps}] UPMパッケージのインストールを開始...");
-            var templateManifest = LoadTemplateManifest();
-            if (templateManifest == null)
-            {
-                Debug.LogError("テンプレートマニフェストの読み込みに失敗しました");
-                CleanupFullSetupState();
-                return;
-            }
 
             var currentManifest = LoadCurrentManifest();
-            var packagesToInstall = GetPackagesToInstall(templateManifest, currentManifest);
+            var packagesToInstall = GetPackagesToInstall(config, currentManifest);
 
             if (packagesToInstall.Count > 0)
             {
@@ -410,19 +422,12 @@ namespace Void2610.UnityTemplate.Editor
                 return;
             }
 
-            // Load template manifest
-            var templateManifest = LoadTemplateManifest();
-            if (templateManifest == null)
-            {
-                Debug.LogError("Failed to load template manifest");
-                EditorUtility.DisplayDialog("エラー", 
-                    "テンプレートマニフェストの読み込みに失敗しました。", "OK");
-                return;
-            }
+            // Load config
+            var config = LoadTemplateConfig();
 
             // Count packages to install
             var currentManifest = LoadCurrentManifest();
-            var packagesToInstall = GetPackagesToInstall(templateManifest, currentManifest);
+            var packagesToInstall = GetPackagesToInstall(config, currentManifest);
 
             if (packagesToInstall.Count == 0)
             {
@@ -1483,31 +1488,6 @@ namespace Void2610.UnityTemplate.Editor
             }
         }
 
-        private static TemplateManifestData LoadTemplateManifest()
-        {
-            var packagePath = GetPackagePath();
-            if (packagePath == null) return null;
-
-            var manifestPath = Path.Combine(packagePath, "template-manifest.json");
-            
-            if (!File.Exists(manifestPath))
-            {
-                Debug.LogError($"template-manifest.json が見つかりません: {manifestPath}");
-                return null;
-            }
-
-            try
-            {
-                var manifestText = File.ReadAllText(manifestPath);
-                return JsonUtility.FromJson<TemplateManifestData>(manifestText);
-            }
-            catch (System.Exception e)
-            {
-                Debug.LogError($"template-manifest.json の解析に失敗しました: {e.Message}");
-                return null;
-            }
-        }
-
         private static ManifestData LoadCurrentManifest()
         {
             var manifestPath = "Packages/manifest.json";
@@ -1528,7 +1508,7 @@ namespace Void2610.UnityTemplate.Editor
             }
         }
 
-        private static List<string> GetPackagesToInstall(TemplateManifestData templateManifest, ManifestData currentManifest)
+        private static List<string> GetPackagesToInstall(TemplateConfigData templateManifest, ManifestData currentManifest)
         {
             var packagesToInstall = new List<string>();
 
