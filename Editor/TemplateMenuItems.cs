@@ -12,14 +12,6 @@ using System.Xml.Linq;
 namespace Void2610.UnityTemplate.Editor
 {
     [System.Serializable]
-    public class TemplateManifestData
-    {
-        public string[] packages = new string[0];
-        public string[] gitPackages = new string[0];
-        public string[] testables = new string[0];
-    }
-
-    [System.Serializable]
     public class ManifestData
     {
         public Dictionary<string, string> dependencies = new();
@@ -33,6 +25,100 @@ namespace Void2610.UnityTemplate.Editor
         public List<string> remainingPackages = new();
         public bool isInstalling = false;
         public int totalPackages = 0;
+    }
+
+    [System.Serializable]
+    public class SubmoduleConfig
+    {
+        public string name = "";
+        public string url = "";
+        public string linkName = "";
+    }
+
+    [System.Serializable]
+    public class AnalyzersConfig
+    {
+        public string submoduleName = "unity-analyzers";
+        public string url = "https://github.com/void2610/unity-analyzers.git";
+        public string projectPath = "src/Void2610.Unity.Analyzers";
+    }
+
+    [System.Serializable]
+    public class ConfigFileEntry
+    {
+        public string source = "";
+        public string destination = "projectRoot";
+    }
+
+    [System.Serializable]
+    public class NugetPackageEntry
+    {
+        public string id = "";
+        public string version = "";
+    }
+
+    [System.Serializable]
+    public class TemplateConfigData
+    {
+        public string[] packages = new[]
+        {
+            "com.unity.render-pipelines.universal",
+            "com.unity.textmeshpro",
+            "com.unity.ide.rider",
+            "com.unity.inputsystem"
+        };
+        public string[] gitPackages = new[]
+        {
+            "https://github.com/GlitchEnzo/NuGetForUnity.git?path=/src/NuGetForUnity",
+            "https://github.com/Cysharp/R3.git?path=src/R3.Unity/Assets/R3.Unity",
+            "https://github.com/Cysharp/UniTask.git?path=src/UniTask/Assets/Plugins/UniTask",
+            "https://github.com/mob-sakai/UIEffect.git?path=Packages/src",
+            "https://github.com/mob-sakai/UnmaskForUGUI.git",
+            "https://github.com/naichilab/unityroom-client-library.git?path=Assets/unityroom",
+            "https://github.com/hadashiA/VContainer.git?path=VContainer/Assets/VContainer",
+            "https://github.com/AnnulusGames/LitMotion.git?path=src/LitMotion/Assets/LitMotion",
+            "https://github.com/Yusuke57/UnityToolbarExtension.git",
+            "https://github.com/Cysharp/ZLogger.git?path=src/ZLogger.Unity/Assets/ZLogger.Unity",
+            "https://github.com/Cysharp/CsprojModifier.git?path=src/CsprojModifier/Assets/CsprojModifier",
+            "https://github.com/hatayama/uLoopMCP.git?path=/Packages/src"
+        };
+        public string[] testables = new[]
+        {
+            "com.unity.inputsystem",
+            "com.unity.ugui"
+        };
+        public string[] folderStructure = new[]
+        {
+            "Assets/Scripts",
+            "Assets/Sprites",
+            "Assets/Audio/BGM",
+            "Assets/Audio/SE",
+            "Assets/Materials",
+            "Assets/Prefabs",
+            "Assets/ScriptableObjects",
+            "Assets/Editor",
+            "Assets/Others"
+        };
+        public SubmoduleConfig[] submodules = new[]
+        {
+            new SubmoduleConfig { name = "my-unity-utils", url = "https://github.com/void2610/my-unity-utils.git", linkName = "Utils" },
+            new SubmoduleConfig { name = "my-unity-settings", url = "https://github.com/void2610/my-unity-settings.git", linkName = "SettingsSystem" }
+        };
+        public AnalyzersConfig analyzers = new AnalyzersConfig();
+        public ConfigFileEntry[] configFiles = new[]
+        {
+            new ConfigFileEntry { source = "Directory.Build.props", destination = "projectRoot" },
+            new ConfigFileEntry { source = "csc.rsp", destination = "assets" },
+            new ConfigFileEntry { source = ".editorconfig", destination = "projectRoot" },
+            new ConfigFileEntry { source = "FormatCheck.csproj", destination = "projectRoot" },
+            new ConfigFileEntry { source = "CLAUDE.md", destination = "projectRoot" }
+        };
+        public NugetPackageEntry[] nugetPackages = new[]
+        {
+            new NugetPackageEntry { id = "R3", version = "1.3.0" },
+            new NugetPackageEntry { id = "ZLogger", version = "2.5.10" }
+        };
+        public string licenseFolderPath = "Assets/LicenseMaster";
     }
 
     /// <summary>
@@ -68,15 +154,28 @@ namespace Void2610.UnityTemplate.Editor
                 return;
             }
 
+            var config = LoadTemplateConfig();
+
+            // ステップ一覧を動的に構築
+            var stepDescriptions = new List<string>();
+            int stepNum = 1;
+            stepDescriptions.Add($"{stepNum++}. フォルダ構成の作成");
+            stepDescriptions.Add($"{stepNum++}. UPMパッケージのインストール");
+            stepDescriptions.Add($"{stepNum++}. NuGetパッケージのインストール");
+            stepDescriptions.Add($"{stepNum++}. 設定ファイルのコピー");
+            foreach (var sub in config.submodules)
+            {
+                stepDescriptions.Add($"{stepNum++}. {sub.linkName} サブモジュールのセットアップ");
+            }
+            if (!string.IsNullOrEmpty(config.analyzers.submoduleName))
+            {
+                stepDescriptions.Add($"{stepNum++}. Analyzers サブモジュールのセットアップ");
+            }
+            int totalSteps = stepNum - 1;
+
             bool proceed = EditorUtility.DisplayDialog("Full Setup",
                 "以下の手順を一括で実行します:\n\n" +
-                "1. フォルダ構成の作成\n" +
-                "2. UPMパッケージのインストール\n" +
-                "3. NuGetパッケージのインストール\n" +
-                "4. 設定ファイルのコピー\n" +
-                "5. Utils サブモジュールのセットアップ\n" +
-                "6. SettingsSystem サブモジュールのセットアップ\n" +
-                "7. Analyzers サブモジュールのセットアップ\n\n" +
+                string.Join("\n", stepDescriptions) + "\n\n" +
                 "※ 既存ファイルは上書きされます。\n" +
                 "※ ドメインリロードが発生する場合があります。\n\n" +
                 "続行しますか？",
@@ -90,21 +189,10 @@ namespace Void2610.UnityTemplate.Editor
             Debug.Log("=== Full Setup を開始します ===");
 
             // ステップ1: フォルダ構成作成（同期）
-            Debug.Log("[Full Setup 1/7] フォルダ構成を作成中...");
-            var folders = new[]
-            {
-                "Assets/Scripts",
-                "Assets/Sprites",
-                "Assets/Audio/BGM",
-                "Assets/Audio/SE",
-                "Assets/Materials",
-                "Assets/Prefabs",
-                "Assets/ScriptableObjects",
-                "Assets/Editor",
-                "Assets/Others"
-            };
+            int currentStep = 1;
+            Debug.Log($"[Full Setup {currentStep}/{totalSteps}] フォルダ構成を作成中...");
 
-            foreach (var folder in folders)
+            foreach (var folder in config.folderStructure)
             {
                 CreateFolderRecursively(folder);
             }
@@ -112,17 +200,11 @@ namespace Void2610.UnityTemplate.Editor
             Debug.Log("✓ フォルダ構成の作成が完了しました");
 
             // ステップ2: UPMパッケージインストール（非同期）
-            Debug.Log("[Full Setup 2/7] UPMパッケージのインストールを開始...");
-            var templateManifest = LoadTemplateManifest();
-            if (templateManifest == null)
-            {
-                Debug.LogError("テンプレートマニフェストの読み込みに失敗しました");
-                CleanupFullSetupState();
-                return;
-            }
+            currentStep++;
+            Debug.Log($"[Full Setup {currentStep}/{totalSteps}] UPMパッケージのインストールを開始...");
 
             var currentManifest = LoadCurrentManifest();
-            var packagesToInstall = GetPackagesToInstall(templateManifest, currentManifest);
+            var packagesToInstall = GetPackagesToInstall(config, currentManifest);
 
             if (packagesToInstall.Count > 0)
             {
@@ -147,10 +229,19 @@ namespace Void2610.UnityTemplate.Editor
 
             _isFullSetupRunning = true;
 
+            var config = LoadTemplateConfig();
+
+            // ステップ数を動的に計算
+            int totalSteps = 4 + config.submodules.Length; // フォルダ + UPM + NuGet + 設定ファイル + サブモジュール数
+            if (!string.IsNullOrEmpty(config.analyzers.submoduleName))
+                totalSteps++;
+
             try
             {
+                int currentStep = 3; // ステップ1,2はFullSetup()側で実行済み
+
                 // ステップ3: NuGetパッケージインストール
-                Debug.Log("[Full Setup 3/7] NuGetパッケージのインストール中...");
+                Debug.Log($"[Full Setup {currentStep}/{totalSteps}] NuGetパッケージのインストール中...");
                 if (IsNugetForUnityInstalled())
                 {
                     var templatePackages = LoadNugetTemplatePackages();
@@ -186,70 +277,75 @@ namespace Void2610.UnityTemplate.Editor
                 }
 
                 // ステップ4: 設定ファイルコピー（上書き確認なし）
-                Debug.Log("[Full Setup 4/7] 設定ファイルをコピー中...");
+                currentStep++;
+                Debug.Log($"[Full Setup {currentStep}/{totalSteps}] 設定ファイルをコピー中...");
                 var packagePath = GetPackagePath();
                 if (packagePath != null)
                 {
                     var configTemplatesPath = Path.Combine(packagePath, "ConfigTemplates");
                     var projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
 
-                    var filesToCopy = new (string sourceName, string destPath)[]
-                    {
-                        ("Directory.Build.props", Path.Combine(projectRoot, "Directory.Build.props")),
-                        ("csc.rsp", Path.Combine(Application.dataPath, "csc.rsp")),
-                        (".editorconfig", Path.Combine(projectRoot, ".editorconfig")),
-                        ("FormatCheck.csproj", Path.Combine(projectRoot, "FormatCheck.csproj")),
-                        ("CLAUDE.md", Path.Combine(projectRoot, "CLAUDE.md"))
-                    };
-
                     int configCopied = 0;
-                    foreach (var (sourceName, destPath) in filesToCopy)
+                    foreach (var entry in config.configFiles)
                     {
-                        var sourcePath = Path.Combine(configTemplatesPath, sourceName);
+                        var destPath = entry.destination == "assets"
+                            ? Path.Combine(Application.dataPath, entry.source)
+                            : Path.Combine(projectRoot, entry.source);
+                        var sourcePath = Path.Combine(configTemplatesPath, entry.source);
                         try
                         {
                             if (File.Exists(sourcePath))
                             {
                                 File.Copy(sourcePath, destPath, true);
-                                Debug.Log($"  ✓ コピーしました: {sourceName}");
+                                Debug.Log($"  ✓ コピーしました: {entry.source}");
                                 configCopied++;
                             }
                         }
                         catch (System.Exception e)
                         {
-                            Debug.LogError($"  ✗ コピー失敗: {sourceName} - {e.Message}");
+                            Debug.LogError($"  ✗ コピー失敗: {entry.source} - {e.Message}");
                         }
                     }
                     Debug.Log($"✓ 設定ファイル: {configCopied}個コピーしました");
                 }
 
-                // ステップ5: Utils サブモジュール
-                Debug.Log("[Full Setup 5/7] Utils サブモジュールをセットアップ中...");
-                SetupSubmodule("my-unity-utils", "https://github.com/void2610/my-unity-utils.git", "Utils");
+                // サブモジュールのセットアップ（設定ファイルから動的に）
+                foreach (var sub in config.submodules)
+                {
+                    currentStep++;
+                    Debug.Log($"[Full Setup {currentStep}/{totalSteps}] {sub.linkName} サブモジュールをセットアップ中...");
+                    SetupSubmodule(sub.name, sub.url, sub.linkName);
+                }
 
-                // ステップ6: SettingsSystem サブモジュール
-                Debug.Log("[Full Setup 6/7] SettingsSystem サブモジュールをセットアップ中...");
-                SetupSubmodule("my-unity-settings", "https://github.com/void2610/my-unity-settings.git", "SettingsSystem");
-
-                // ステップ7: Analyzers サブモジュール
-                Debug.Log("[Full Setup 7/7] Analyzers サブモジュールをセットアップ中...");
-                SetupAnalyzersSubmoduleInternal();
+                // Analyzers サブモジュール
+                if (!string.IsNullOrEmpty(config.analyzers.submoduleName))
+                {
+                    currentStep++;
+                    Debug.Log($"[Full Setup {currentStep}/{totalSteps}] Analyzers サブモジュールをセットアップ中...");
+                    SetupAnalyzersSubmoduleInternal(config.analyzers);
+                }
 
                 // 最終リフレッシュ
                 AssetDatabase.Refresh();
 
-                Debug.Log("=== Full Setup が完了しました ===");
-                EditorUtility.DisplayDialog("Full Setup 完了",
-                    "すべてのセットアップが完了しました！\n\n" +
+                // 完了メッセージを動的に構築
+                var completionMessage = "すべてのセットアップが完了しました！\n\n" +
                     "✓ フォルダ構成の作成\n" +
                     "✓ UPMパッケージのインストール\n" +
                     "✓ NuGetパッケージのインストール\n" +
-                    "✓ 設定ファイルのコピー\n" +
-                    "✓ Utils サブモジュール\n" +
-                    "✓ SettingsSystem サブモジュール\n" +
-                    "✓ Analyzers サブモジュール\n\n" +
-                    "詳細はConsoleログを確認してください。",
-                    "OK");
+                    "✓ 設定ファイルのコピー\n";
+                foreach (var sub in config.submodules)
+                {
+                    completionMessage += $"✓ {sub.linkName} サブモジュール\n";
+                }
+                if (!string.IsNullOrEmpty(config.analyzers.submoduleName))
+                {
+                    completionMessage += "✓ Analyzers サブモジュール\n";
+                }
+                completionMessage += "\n詳細はConsoleログを確認してください。";
+
+                Debug.Log("=== Full Setup が完了しました ===");
+                EditorUtility.DisplayDialog("Full Setup 完了", completionMessage, "OK");
             }
             catch (System.Exception e)
             {
@@ -268,18 +364,18 @@ namespace Void2610.UnityTemplate.Editor
         /// <summary>
         /// Analyzersサブモジュールの内部セットアップ（Full Setup用）
         /// </summary>
-        private static void SetupAnalyzersSubmoduleInternal()
+        private static void SetupAnalyzersSubmoduleInternal(AnalyzersConfig analyzersConfig)
         {
             var projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-            var submoduleName = "unity-analyzers";
-            var repoUrl = "https://github.com/void2610/unity-analyzers.git";
+            var submoduleName = analyzersConfig.submoduleName;
+            var repoUrl = analyzersConfig.url;
             var submodulePath = Path.Combine(projectRoot, submoduleName);
 
             if (IsSubmoduleRegistered(submoduleName))
             {
                 Debug.Log($"✓ {submoduleName} サブモジュールは既に登録されています");
                 ExecuteGitCommandSync(projectRoot, "submodule update --init --recursive");
-                BuildAnalyzerDll(projectRoot, submoduleName);
+                BuildAnalyzerDll(projectRoot, submoduleName, analyzersConfig.projectPath);
                 return;
             }
 
@@ -310,7 +406,7 @@ namespace Void2610.UnityTemplate.Editor
 
             Debug.Log($"✓ {submoduleName} サブモジュールを追加しました");
             ExecuteGitCommandSync(projectRoot, "submodule update --init --recursive");
-            BuildAnalyzerDll(projectRoot, submoduleName);
+            BuildAnalyzerDll(projectRoot, submoduleName, analyzersConfig.projectPath);
         }
 
         /// <summary>
@@ -338,19 +434,12 @@ namespace Void2610.UnityTemplate.Editor
                 return;
             }
 
-            // Load template manifest
-            var templateManifest = LoadTemplateManifest();
-            if (templateManifest == null)
-            {
-                Debug.LogError("Failed to load template manifest");
-                EditorUtility.DisplayDialog("エラー", 
-                    "テンプレートマニフェストの読み込みに失敗しました。", "OK");
-                return;
-            }
+            // Load config
+            var config = LoadTemplateConfig();
 
             // Count packages to install
             var currentManifest = LoadCurrentManifest();
-            var packagesToInstall = GetPackagesToInstall(templateManifest, currentManifest);
+            var packagesToInstall = GetPackagesToInstall(config, currentManifest);
 
             if (packagesToInstall.Count == 0)
             {
@@ -476,47 +565,21 @@ namespace Void2610.UnityTemplate.Editor
         }
 
         /// <summary>
-        /// NuGetテンプレートからパッケージリストを読み込み
+        /// 設定ファイルからNuGetパッケージリストを読み込み
         /// </summary>
         /// <returns>パッケージID -> バージョンのDictionary</returns>
         private static Dictionary<string, string> LoadNugetTemplatePackages()
         {
-            var packagePath = GetPackagePath();
-            if (packagePath == null) return null;
-
-            var templatePath = Path.Combine(packagePath, "NugetTemplates", "packages.config.template");
-            if (!File.Exists(templatePath))
+            var config = LoadTemplateConfig();
+            var packages = new Dictionary<string, string>();
+            foreach (var entry in config.nugetPackages)
             {
-                Debug.LogError($"NuGetテンプレートが見つかりません: {templatePath}");
-                return null;
-            }
-
-            try
-            {
-                var packages = new Dictionary<string, string>();
-                var doc = XDocument.Load(templatePath);
-                var packageElements = doc.Root?.Elements("package");
-
-                if (packageElements == null) return packages;
-
-                foreach (var element in packageElements)
+                if (!string.IsNullOrEmpty(entry.id) && !string.IsNullOrEmpty(entry.version))
                 {
-                    var id = element.Attribute("id")?.Value;
-                    var version = element.Attribute("version")?.Value;
-
-                    if (!string.IsNullOrEmpty(id) && !string.IsNullOrEmpty(version))
-                    {
-                        packages[id] = version;
-                    }
+                    packages[entry.id] = entry.version;
                 }
-
-                return packages;
             }
-            catch (System.Exception e)
-            {
-                Debug.LogError($"NuGetテンプレートの読み込みに失敗しました: {e.Message}");
-                return null;
-            }
+            return packages;
         }
 
         /// <summary>
@@ -896,22 +959,11 @@ namespace Void2610.UnityTemplate.Editor
         [MenuItem(MENU_ROOT + "Create Folder Structure")]
         public static void CreateFolderStructure()
         {
-            var folders = new[]
-            {
-                "Assets/Scripts",
-                "Assets/Sprites",
-                "Assets/Audio/BGM",
-                "Assets/Audio/SE",
-                "Assets/Materials",
-                "Assets/Prefabs",
-                "Assets/ScriptableObjects",
-                "Assets/Editor",
-                "Assets/Others"
-            };
+            var config = LoadTemplateConfig();
 
             int createdCount = 0;
 
-            foreach (var folder in folders)
+            foreach (var folder in config.folderStructure)
             {
                 if (CreateFolderRecursively(folder))
                 {
@@ -937,21 +989,33 @@ namespace Void2610.UnityTemplate.Editor
         [MenuItem(MENU_ROOT + "Setup Utils Submodule")]
         public static void SetupUtilsSubmodule()
         {
-            SetupSubmodule("my-unity-utils", "https://github.com/void2610/my-unity-utils.git", "Utils");
+            var config = LoadTemplateConfig();
+            var sub = config.submodules.FirstOrDefault(s => s.linkName == "Utils");
+            if (sub != null)
+                SetupSubmodule(sub.name, sub.url, sub.linkName);
+            else
+                Debug.LogWarning("Utils サブモジュールの設定が template-config.json に見つかりません");
         }
 
         [MenuItem(MENU_ROOT + "Setup SettingsSystem Submodule")]
         public static void SetupSettingsSystemSubmodule()
         {
-            SetupSubmodule("my-unity-settings", "https://github.com/void2610/my-unity-settings.git", "SettingsSystem");
+            var config = LoadTemplateConfig();
+            var sub = config.submodules.FirstOrDefault(s => s.linkName == "SettingsSystem");
+            if (sub != null)
+                SetupSubmodule(sub.name, sub.url, sub.linkName);
+            else
+                Debug.LogWarning("SettingsSystem サブモジュールの設定が template-config.json に見つかりません");
         }
 
         [MenuItem(MENU_ROOT + "Setup Analyzers Submodule")]
         public static void SetupAnalyzersSubmodule()
         {
+            var config = LoadTemplateConfig();
+            var analyzersConfig = config.analyzers;
             var projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-            var submoduleName = "unity-analyzers";
-            var repoUrl = "https://github.com/void2610/unity-analyzers.git";
+            var submoduleName = analyzersConfig.submoduleName;
+            var repoUrl = analyzersConfig.url;
             var submodulePath = Path.Combine(projectRoot, submoduleName);
 
             // 1. サブモジュール登録済みチェック
@@ -959,7 +1023,7 @@ namespace Void2610.UnityTemplate.Editor
             {
                 Debug.Log($"✓ {submoduleName} サブモジュールは既に登録されています");
                 ExecuteGitCommandSync(projectRoot, "submodule update --init --recursive");
-                BuildAnalyzerDll(projectRoot, submoduleName);
+                BuildAnalyzerDll(projectRoot, submoduleName, analyzersConfig.projectPath);
                 return;
             }
 
@@ -1010,7 +1074,7 @@ namespace Void2610.UnityTemplate.Editor
             ExecuteGitCommandSync(projectRoot, "submodule update --init --recursive");
 
             // 6. アナライザーDLLをビルド
-            BuildAnalyzerDll(projectRoot, submoduleName);
+            BuildAnalyzerDll(projectRoot, submoduleName, analyzersConfig.projectPath);
         }
 
         /// <summary>
@@ -1018,9 +1082,15 @@ namespace Void2610.UnityTemplate.Editor
         /// </summary>
         /// <param name="projectRoot">Unityプロジェクトルート</param>
         /// <param name="submoduleName">サブモジュール名</param>
-        private static void BuildAnalyzerDll(string projectRoot, string submoduleName)
+        /// <param name="projectPath">サブモジュール内のプロジェクト相対パス</param>
+        private static void BuildAnalyzerDll(string projectRoot, string submoduleName, string projectPath)
         {
-            var analyzerProjectPath = Path.Combine(projectRoot, submoduleName, "src", "Void2610.Unity.Analyzers");
+            var pathParts = projectPath.Split('/');
+            var analyzerProjectPath = Path.Combine(projectRoot, submoduleName);
+            foreach (var part in pathParts)
+            {
+                analyzerProjectPath = Path.Combine(analyzerProjectPath, part);
+            }
 
             if (!Directory.Exists(analyzerProjectPath))
             {
@@ -1160,27 +1230,21 @@ namespace Void2610.UnityTemplate.Editor
         public static void CopyConfigFiles()
         {
             var packagePath = GetPackagePath();
+            var config = LoadTemplateConfig();
 
             var configTemplatesPath = Path.Combine(packagePath, "ConfigTemplates");
             var projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
 
-            // コピー対象ファイルの定義（ソースファイル名, コピー先パス）
-            var filesToCopy = new (string sourceName, string destPath)[]
-            {
-                ("Directory.Build.props", Path.Combine(projectRoot, "Directory.Build.props")),
-                ("csc.rsp", Path.Combine(Application.dataPath, "csc.rsp")),
-                (".editorconfig", Path.Combine(projectRoot, ".editorconfig")),
-                ("FormatCheck.csproj", Path.Combine(projectRoot, "FormatCheck.csproj")),
-                ("CLAUDE.md", Path.Combine(projectRoot, "CLAUDE.md"))
-            };
-
             var copiedCount = 0;
             var skippedCount = 0;
 
-            foreach (var (sourceName, destPath) in filesToCopy)
+            foreach (var entry in config.configFiles)
             {
-                var sourcePath = Path.Combine(configTemplatesPath, sourceName);
-                var shouldCopy = CopyConfigFile(sourcePath, destPath, sourceName, ref skippedCount);
+                var destPath = entry.destination == "assets"
+                    ? Path.Combine(Application.dataPath, entry.source)
+                    : Path.Combine(projectRoot, entry.source);
+                var sourcePath = Path.Combine(configTemplatesPath, entry.source);
+                var shouldCopy = CopyConfigFile(sourcePath, destPath, entry.source, ref skippedCount);
                 if (shouldCopy)
                 {
                     copiedCount++;
@@ -1245,12 +1309,11 @@ namespace Void2610.UnityTemplate.Editor
             }
             else if (copiedCount > 0)
             {
-                message = $"{copiedCount}個の設定ファイルをコピーしました。\n\n" +
-                          "• Directory.Build.props: プロジェクトルート\n" +
-                          "• csc.rsp: Assets/\n" +
-                          "• .editorconfig: プロジェクトルート\n" +
-                          "• FormatCheck.csproj: プロジェクトルート\n" +
-                          "• CLAUDE.md: プロジェクトルート";
+                var config = LoadTemplateConfig();
+                var fileList = string.Join("\n", config.configFiles.Select(
+                    f => $"• {f.source}: {(f.destination == "assets" ? "Assets/" : "プロジェクトルート")}"
+                ));
+                message = $"{copiedCount}個の設定ファイルをコピーしました。\n\n{fileList}";
             }
             else if (skippedCount > 0)
             {
@@ -1288,15 +1351,16 @@ namespace Void2610.UnityTemplate.Editor
                 return;
             }
             
-            int copiedCount = CopyLicenseFilesFromTemplate();
-            
+            var config = LoadTemplateConfig();
+            int copiedCount = CopyLicenseFilesFromTemplate(config.licenseFolderPath);
+
             AssetDatabase.Refresh();
-            
+
             if (copiedCount > 0)
             {
-                EditorUtility.DisplayDialog("ライセンスファイルコピー完了", 
+                EditorUtility.DisplayDialog("ライセンスファイルコピー完了",
                     $"{copiedCount}個のライセンスファイルをコピーしました。\n" +
-                    "Assets/LicenseMaster/フォルダで確認してください。", 
+                    $"{config.licenseFolderPath}/フォルダで確認してください。",
                     "OK");
             }
             else
@@ -1340,15 +1404,15 @@ namespace Void2610.UnityTemplate.Editor
             return Path.GetDirectoryName(scriptPath);
         }
 
-        private static int CopyLicenseFilesFromTemplate()
+        private static int CopyLicenseFilesFromTemplate(string licenseFolderPath)
         {
             var packagePath = GetPackagePath();
             if (packagePath == null) return 0;
-            
+
             var licenseTemplatesPath = Path.Combine(packagePath, "LicenseTemplates");
-            
+
             // LicenseMasterのライセンスファイル保存先ディレクトリを作成
-            var targetPath = "Assets/LicenseMaster";
+            var targetPath = licenseFolderPath;
             if (!AssetDatabase.IsValidFolder(targetPath))
             {
                 CreateFolderRecursively(targetPath);
@@ -1380,28 +1444,33 @@ namespace Void2610.UnityTemplate.Editor
             return copiedCount;
         }
         
-        private static TemplateManifestData LoadTemplateManifest()
+        private static TemplateConfigData LoadTemplateConfig()
         {
             var packagePath = GetPackagePath();
-            if (packagePath == null) return null;
-            
-            var manifestPath = Path.Combine(packagePath, "template-manifest.json");
-            
-            if (!File.Exists(manifestPath))
+            if (packagePath == null)
             {
-                Debug.LogError($"template-manifest.json が見つかりません: {manifestPath}");
-                return null;
+                Debug.LogWarning("パッケージパスが見つかりません。デフォルト設定を使用します。");
+                return new TemplateConfigData();
+            }
+
+            var configPath = Path.Combine(packagePath, "template-config.json");
+
+            if (!File.Exists(configPath))
+            {
+                Debug.LogWarning($"template-config.json が見つかりません: {configPath}\nデフォルト設定を使用します。");
+                return new TemplateConfigData();
             }
 
             try
             {
-                var manifestText = File.ReadAllText(manifestPath);
-                return JsonUtility.FromJson<TemplateManifestData>(manifestText);
+                var configText = File.ReadAllText(configPath);
+                var config = JsonUtility.FromJson<TemplateConfigData>(configText);
+                return config ?? new TemplateConfigData();
             }
             catch (System.Exception e)
             {
-                Debug.LogError($"template-manifest.json の解析に失敗しました: {e.Message}");
-                return null;
+                Debug.LogError($"template-config.json の解析に失敗しました: {e.Message}\nデフォルト設定を使用します。");
+                return new TemplateConfigData();
             }
         }
 
@@ -1425,7 +1494,7 @@ namespace Void2610.UnityTemplate.Editor
             }
         }
 
-        private static List<string> GetPackagesToInstall(TemplateManifestData templateManifest, ManifestData currentManifest)
+        private static List<string> GetPackagesToInstall(TemplateConfigData templateManifest, ManifestData currentManifest)
         {
             var packagesToInstall = new List<string>();
 
