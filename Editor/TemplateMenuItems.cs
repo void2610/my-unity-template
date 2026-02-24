@@ -51,6 +51,13 @@ namespace Void2610.UnityTemplate.Editor
     }
 
     [System.Serializable]
+    public class NugetPackageEntry
+    {
+        public string id = "";
+        public string version = "";
+    }
+
+    [System.Serializable]
     public class TemplateConfigData
     {
         public string[] packages = new[]
@@ -105,6 +112,11 @@ namespace Void2610.UnityTemplate.Editor
             new ConfigFileEntry { source = ".editorconfig", destination = "projectRoot" },
             new ConfigFileEntry { source = "FormatCheck.csproj", destination = "projectRoot" },
             new ConfigFileEntry { source = "CLAUDE.md", destination = "projectRoot" }
+        };
+        public NugetPackageEntry[] nugetPackages = new[]
+        {
+            new NugetPackageEntry { id = "R3", version = "1.3.0" },
+            new NugetPackageEntry { id = "ZLogger", version = "2.5.10" }
         };
         public string licenseFolderPath = "Assets/LicenseMaster";
     }
@@ -553,47 +565,21 @@ namespace Void2610.UnityTemplate.Editor
         }
 
         /// <summary>
-        /// NuGetテンプレートからパッケージリストを読み込み
+        /// 設定ファイルからNuGetパッケージリストを読み込み
         /// </summary>
         /// <returns>パッケージID -> バージョンのDictionary</returns>
         private static Dictionary<string, string> LoadNugetTemplatePackages()
         {
-            var packagePath = GetPackagePath();
-            if (packagePath == null) return null;
-
-            var templatePath = Path.Combine(packagePath, "NugetTemplates", "packages.config.template");
-            if (!File.Exists(templatePath))
+            var config = LoadTemplateConfig();
+            var packages = new Dictionary<string, string>();
+            foreach (var entry in config.nugetPackages)
             {
-                Debug.LogError($"NuGetテンプレートが見つかりません: {templatePath}");
-                return null;
-            }
-
-            try
-            {
-                var packages = new Dictionary<string, string>();
-                var doc = XDocument.Load(templatePath);
-                var packageElements = doc.Root?.Elements("package");
-
-                if (packageElements == null) return packages;
-
-                foreach (var element in packageElements)
+                if (!string.IsNullOrEmpty(entry.id) && !string.IsNullOrEmpty(entry.version))
                 {
-                    var id = element.Attribute("id")?.Value;
-                    var version = element.Attribute("version")?.Value;
-
-                    if (!string.IsNullOrEmpty(id) && !string.IsNullOrEmpty(version))
-                    {
-                        packages[id] = version;
-                    }
+                    packages[entry.id] = entry.version;
                 }
-
-                return packages;
             }
-            catch (System.Exception e)
-            {
-                Debug.LogError($"NuGetテンプレートの読み込みに失敗しました: {e.Message}");
-                return null;
-            }
+            return packages;
         }
 
         /// <summary>

@@ -51,6 +51,16 @@
     "url": "https://github.com/void2610/unity-analyzers.git",
     "projectPath": "src/Void2610.Unity.Analyzers"
   },
+  "nugetPackages": [
+    {
+      "id": "R3",
+      "version": "1.3.0"
+    },
+    {
+      "id": "ZLogger",
+      "version": "2.5.10"
+    }
+  ],
   "configFiles": [
     {
       "source": "Directory.Build.props",

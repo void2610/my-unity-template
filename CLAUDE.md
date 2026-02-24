@@ -44,6 +44,7 @@ This is a Unity Package Manager (UPM) compatible template package for rapid Unit
   - `folderStructure`: Array of folder paths to create (e.g. `Assets/Scripts`, `Assets/Sprites`)
   - `submodules`: Array of Git submodules with `name`, `url`, `linkName` for each
   - `analyzers`: Analyzer submodule settings (`submoduleName`, `url`, `projectPath`)
+  - `nugetPackages`: NuGet packages with `id` and `version` (e.g. R3, ZLogger)
   - `configFiles`: Array of config files to copy with `source` and `destination` (`projectRoot` or `assets`)
   - `licenseFolderPath`: Destination folder for license files
 - All values have sensible defaults in C# classes; if the file is missing or incomplete, defaults are used
