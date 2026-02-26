@@ -1,0 +1,5 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Unity meta files should not be treated as license files by GitHub
+LICENSE.meta linguist-generated=true
