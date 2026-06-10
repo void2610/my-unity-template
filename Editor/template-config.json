@@ -17,11 +17,13 @@
     "https://github.com/Yusuke57/UnityToolbarExtension.git",
     "https://github.com/Cysharp/ZLogger.git?path=src/ZLogger.Unity/Assets/ZLogger.Unity",
     "https://github.com/Cysharp/CsprojModifier.git?path=src/CsprojModifier/Assets/CsprojModifier",
-    "https://github.com/hatayama/uLoopMCP.git?path=/Packages/src"
+    "https://github.com/hatayama/uLoopMCP.git?path=/Packages/src",
+    "https://github.com/void2610/liminal-palette.git"
   ],
   "testables": [
     "com.unity.inputsystem",
-    "com.unity.ugui"
+    "com.unity.ugui",
+    "com.void2610.liminal-palette"
   ],
   "folderStructure": [
     "Assets/Scripts",
