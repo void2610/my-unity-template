@@ -19,6 +19,7 @@
     "https://github.com/Cysharp/CsprojModifier.git?path=src/CsprojModifier/Assets/CsprojModifier",
     "https://github.com/hatayama/uLoopMCP.git?path=/Packages/src",
     "https://github.com/void2610/liminal-palette.git",
+    "https://github.com/void2610/cinematic-effect.git?path=Assets/CinematicEffect",
     "https://github.com/nowsprinting/test-helper.git"
   ],
   "testables": [

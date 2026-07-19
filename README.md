@@ -57,6 +57,7 @@ Unity Package Managerから：
 以下が自動インストールされます：
 - URP、Input System等のUnity標準パッケージ
 - R3、UniTask、VContainer、LitMotion等の汎用ライブラリ
+- LiminalPalette、CinematicEffect等の自作ライブラリ
 - NuGetForUnity
 
 ### 3. R3をインストール（手動）
@@ -162,6 +163,9 @@ ln -s ../../my-unity-utils Assets/Scripts/Utils
 ## 📚 関連リポジトリ
 
 - **[my-unity-utils](https://github.com/void2610/my-unity-utils)**: Utilsスクリプト集
+- **[my-unity-settings](https://github.com/void2610/my-unity-settings)**: ゲーム内設定システム
+- **[liminal-palette](https://github.com/void2610/liminal-palette)**: Unity用コマンドパレットシステム
+- **[cinematic-effect](https://github.com/void2610/cinematic-effect)**: 宣言的シネマティックエフェクト集（UniTask + LitMotion）
 
 ---
 
