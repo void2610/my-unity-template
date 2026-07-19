@@ -25,8 +25,10 @@ Unity開発を効率化するためのテンプレートパッケージ
 ### 1. テンプレートのインストール
 
 Unity Package Managerから：
+
 1. **「+ > Add package from git URL」**を選択
 2. 以下のURLを入力:
+
    ```
    https://github.com/void2610/my-unity-template.git
    ```
@@ -35,14 +37,16 @@ Unity Package Managerから：
 
 ### 1. Utilsスクリプトのセットアップ
 
-**Tools > Unity Template > Setup Utils Submodule**
+Tools > Unity Template > Setup Utils Submodule
 
 これにより自動的に：
+
 - プロジェクトルートに`my-unity-utils` submoduleが追加されます
 - `Assets/Scripts/Utils/`がシンボリックリンクとして作成されます
 - 34個のUtilsスクリプトが利用可能になります
 
 **含まれるスクリプト:**
+
 - **UI**: ButtonSe, MyButton, MultiImageButton, CanvasGroupSwitcher等
 - **Animation**: SpriteSheetAnimator, FloatMove等
 - **Core**: SingletonMonoBehaviour, ExtendedMethods, SerializableDictionary等
@@ -52,9 +56,10 @@ Unity Package Managerから：
 
 ### 2. 依存関係をインストール
 
-**Tools > Unity Template > Install Dependencies**
+Tools > Unity Template > Install Dependencies
 
 以下が自動インストールされます：
+
 - URP、Input System等のUnity標準パッケージ
 - R3、UniTask、VContainer、LitMotion等の汎用ライブラリ
 - LiminalPalette、CinematicEffect等の自作ライブラリ
@@ -66,7 +71,7 @@ Unity Package Managerから：
 
 ### 4. プロジェクト構造を作成（オプション）
 
-**Tools > Unity Template > Create Folder Structure**
+Tools > Unity Template > Create Folder Structure
 
 ### 5. ライセンス管理（オプション）
 
@@ -142,6 +147,7 @@ git commit -m "Update my-unity-utils submodule"
 自動セットアップが使えない場合：
 
 ### Submodule追加
+
 ```bash
 git submodule add https://github.com/void2610/my-unity-utils.git my-unity-utils
 ```
@@ -149,11 +155,13 @@ git submodule add https://github.com/void2610/my-unity-utils.git my-unity-utils
 ### シンボリックリンク作成
 
 **Windows (コマンドプロンプト):**
+
 ```cmd
 mklink /J Assets\Scripts\Utils ..\..\my-unity-utils
 ```
 
 **macOS/Linux:**
+
 ```bash
 ln -s ../../my-unity-utils Assets/Scripts/Utils
 ```
