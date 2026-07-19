@@ -166,6 +166,8 @@ ln -s ../../my-unity-utils Assets/Scripts/Utils
 - **[my-unity-settings](https://github.com/void2610/my-unity-settings)**: ゲーム内設定システム
 - **[liminal-palette](https://github.com/void2610/liminal-palette)**: Unity用コマンドパレットシステム
 - **[cinematic-effect](https://github.com/void2610/cinematic-effect)**: 宣言的シネマティックエフェクト集（UniTask + LitMotion）
+- **[novel-kit](https://github.com/void2610/novel-kit)**: ノベルゲーム機能ライブラリ
+- **[noema](https://github.com/void2610/noema)**: uGUI のセマンティック UI テスト（意味木・実レイキャストクリック・ビジュアルリグレッション）
 
 ---
 
