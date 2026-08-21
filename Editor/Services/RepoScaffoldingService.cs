@@ -15,7 +15,7 @@ namespace Void2610.UnityTemplate.Editor
             var projectRoot = TemplateConfig.GetProjectRoot();
             var packagePath = TemplateConfig.GetPackagePath();
             if (packagePath == null) return;
-            var templatesPath = Path.Combine(packagePath, Path.Combine("Templates", "Repo~"));
+            var templatesPath = Path.Combine(packagePath, "Templates", "Repo~");
 
             foreach (var entry in config.repoFiles)
             {
@@ -170,7 +170,7 @@ namespace Void2610.UnityTemplate.Editor
         internal static string GetRepoTemplatesPath()
         {
             var packagePath = TemplateConfig.GetPackagePath();
-            return packagePath == null ? null : Path.Combine(packagePath, Path.Combine("Templates", "Repo~"));
+            return packagePath == null ? null : Path.Combine(packagePath, "Templates", "Repo~");
         }
     }
 }

@@ -78,8 +78,10 @@ namespace Void2610.UnityTemplate.Editor
                 })
                 .ToList();
 
-            _scaffoldingDone = File.Exists(Path.Combine(projectRoot, "Knowledge", "index.md")) &&
-                               File.Exists(Path.Combine(projectRoot, ".gitattributes"));
+            // Setup が配置する repoFiles 全件 + 必ず生成する Knowledge/log.md で判定する
+            _scaffoldingDone = (_config.repoFiles ?? new RepoFileEntry[0])
+                                   .All(f => File.Exists(Path.Combine(projectRoot, f.target))) &&
+                               File.Exists(Path.Combine(projectRoot, "Knowledge", "log.md"));
 
             // 配置済みターゲットの選択状態は意味を持たないため false に戻す
             var previousSelection = _deployStatus.ToDictionary(d => d.target.name, d => d.selected);
@@ -223,12 +225,13 @@ namespace Void2610.UnityTemplate.Editor
 
             DrawSectionTitle("デプロイ workflow");
 
+            var busy = UpmPackageInstaller.IsInstalling || FullSetupRunner.IsRunning;
             for (int i = 0; i < _deployStatus.Count; i++)
             {
                 var (target, placed, selected) = _deployStatus[i];
                 using (new EditorGUILayout.HorizontalScope())
                 {
-                    using (new EditorGUI.DisabledScope(placed))
+                    using (new EditorGUI.DisabledScope(placed || busy))
                     {
                         var newSelected = EditorGUILayout.ToggleLeft(
                             placed ? $"{target.name} (配置済み)" : target.name,
@@ -242,7 +245,7 @@ namespace Void2610.UnityTemplate.Editor
             }
 
             var anySelected = _deployStatus.Any(d => !d.placed && d.selected);
-            using (new EditorGUI.DisabledScope(!anySelected))
+            using (new EditorGUI.DisabledScope(!anySelected || busy))
             {
                 if (GUILayout.Button("選択したターゲットを配置"))
                 {
