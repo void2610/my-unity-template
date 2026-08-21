@@ -6,6 +6,8 @@ on:
 
 jobs:
   preview:
+    # フォーク経由の pull_request では self-hosted runner で任意コードが走らないようスキップ。
+    if: github.event.pull_request.head.repo.full_name == github.repository
     uses: void2610/unity-coding-standards/.github/workflows/webgl-build-self-hosted.yml@main
     with:
       unity-version: "6000.3.10f1"
