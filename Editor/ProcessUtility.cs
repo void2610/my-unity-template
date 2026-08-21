@@ -24,9 +24,7 @@ namespace Void2610.UnityTemplate.Editor
             {
                 using (var process = System.Diagnostics.Process.Start(processInfo))
                 {
-                    process.WaitForExit();
-                    var output = process.StandardOutput.ReadToEnd();
-                    var error = process.StandardError.ReadToEnd();
+                    var (output, error) = ReadOutputsAndWait(process);
 
                     if (!string.IsNullOrEmpty(output))
                     {
@@ -64,8 +62,7 @@ namespace Void2610.UnityTemplate.Editor
             {
                 using (var process = System.Diagnostics.Process.Start(processInfo))
                 {
-                    process.WaitForExit();
-                    var error = process.StandardError.ReadToEnd();
+                    var (_, error) = ReadOutputsAndWait(process);
 
                     if (process.ExitCode != 0 && !string.IsNullOrEmpty(error))
                     {
@@ -80,6 +77,21 @@ namespace Void2610.UnityTemplate.Editor
                 Debug.LogError($"Command execution failed: {e.Message}");
                 return -1;
             }
+        }
+
+        // WaitForExit 前に同期読み取りするとバッファ満杯でデッドロックするため、非同期で吸い上げてから待つ
+        private static (string output, string error) ReadOutputsAndWait(System.Diagnostics.Process process)
+        {
+            var output = new System.Text.StringBuilder();
+            var error = new System.Text.StringBuilder();
+
+            process.OutputDataReceived += (_, e) => { if (e.Data != null) output.AppendLine(e.Data); };
+            process.ErrorDataReceived += (_, e) => { if (e.Data != null) error.AppendLine(e.Data); };
+            process.BeginOutputReadLine();
+            process.BeginErrorReadLine();
+            process.WaitForExit();
+
+            return (output.ToString(), error.ToString());
         }
     }
 }
