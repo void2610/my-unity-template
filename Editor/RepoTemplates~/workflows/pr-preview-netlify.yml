@@ -1,0 +1,32 @@
+name: PR Preview
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+# 同一 PR への連続 push では走行中の旧ビルド (40 分超) をキャンセルしてランナー占有を防ぐ。
+concurrency:
+  group: pr-preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    # フォーク経由の pull_request では self-hosted runner で任意コードが走らないようスキップ。
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    uses: void2610/unity-coding-standards/.github/workflows/webgl-build-netlify-self-hosted.yml@main
+    with:
+      unity-version: "6000.3.10f1"
+      execute-method: Void2610.UnityTemplate.Editor.CI.CiBuild.BuildWebGL
+      runner-labels: '["self-hosted", "macos", "apple-silicon"]'
+      nuget-restore-method: Void2610.UnityTemplate.Editor.CI.NuGetRestore.Restore
+      # alias 指定で本番 (--prod) ではなくプレビューデプロイになる。PR 単位で URL が固定される
+      deploy-alias: pr-${{ github.event.pull_request.number }}
+      deploy-message: "PR #${{ github.event.pull_request.number }} ${{ github.event.pull_request.head.sha }}"
+      pr-number: ${{ github.event.pull_request.number }}
+      pr-title: ${{ github.event.pull_request.title }}
+      pr-url: ${{ github.event.pull_request.html_url }}
+      pr-head-sha: ${{ github.event.pull_request.head.sha }}
+    secrets:
+      SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
+      NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+      DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}

@@ -1,0 +1,23 @@
+name: Steam Deploy
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    uses: void2610/unity-coding-standards/.github/workflows/steam-deploy-self-hosted.yml@main
+    with:
+      unity-version: "6000.3.10f1"
+      windows-execute-method: Void2610.UnityTemplate.Editor.CI.CiBuild.BuildWindows
+      mac-execute-method: Void2610.UnityTemplate.Editor.CI.CiBuild.BuildMac
+      build-name: __PROJECT_NAME__
+      runner-labels: '["self-hosted","macos","apple-silicon"]'
+      release-branch: test
+      nuget-restore-method: Void2610.UnityTemplate.Editor.CI.NuGetRestore.Restore
+    # secrets: inherit はオーナー境界 (user / org) を越えると無効になるため明示パスする
+    secrets:
+      SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
+      STEAM_APP_ID: ${{ secrets.STEAM_APP_ID }}

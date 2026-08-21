@@ -3,7 +3,12 @@
     "com.unity.render-pipelines.universal",
     "com.unity.textmeshpro",
     "com.unity.ide.rider",
-    "com.unity.inputsystem"
+    "com.unity.inputsystem",
+    "com.unity.addressables",
+    "com.unity.recorder",
+    "com.unity.localization",
+    "com.unity.logging",
+    "com.unity.visualeffectgraph"
   ],
   "gitPackages": [
     "https://github.com/GlitchEnzo/NuGetForUnity.git?path=/src/NuGetForUnity",
@@ -21,7 +26,11 @@
     "https://github.com/void2610/liminal-palette.git",
     "https://github.com/void2610/cinematic-effect.git?path=Assets/CinematicEffect",
     "https://github.com/void2610/noema.git",
-    "https://github.com/nowsprinting/test-helper.git"
+    "https://github.com/nowsprinting/test-helper.git",
+    "https://github.com/hadashiA/VitalRouter.git?path=src/VitalRouter.Unity/Assets/VitalRouter",
+    "https://github.com/hadashiA/ChibiRuby.git?path=src/MRubyCS.Unity/Assets/MRubyCS.Compiler.Unity#0.19.2",
+    "https://github.com/Haruma-K/uPalette.git?path=/Assets/uPalette",
+    "https://github.com/rlabrecque/Steamworks.NET.git?path=/com.rlabrecque.steamworks.net"
   ],
   "testables": [
     "com.unity.inputsystem",
@@ -64,6 +73,22 @@
     {
       "id": "ZLogger",
       "version": "2.5.10"
+    },
+    {
+      "id": "VitalRouter",
+      "version": "2.2.0"
+    },
+    {
+      "id": "VitalRouter.MRuby",
+      "version": "2.2.0"
+    },
+    {
+      "id": "MRubyCS",
+      "version": "0.19.2"
+    },
+    {
+      "id": "MRubyCS.Serializer",
+      "version": "0.16.0"
     }
   ],
   "configFiles": [
@@ -88,5 +113,109 @@
       "destination": "projectRoot"
     }
   ],
-  "licenseFolderPath": "Assets/LicenseMaster"
+  "licenseFolderPath": "Assets/LicenseMaster",
+  "repoFiles": [
+    {
+      "source": "gitattributes",
+      "target": ".gitattributes"
+    },
+    {
+      "source": "claude-settings.json",
+      "target": ".claude/settings.json"
+    },
+    {
+      "source": "knowledge/index.md",
+      "target": "Knowledge/index.md"
+    },
+    {
+      "source": "knowledge/design-index.md",
+      "target": "Knowledge/design/index.md"
+    },
+    {
+      "source": "knowledge/systems-index.md",
+      "target": "Knowledge/systems/index.md"
+    },
+    {
+      "source": "workflows/test.yml",
+      "target": ".github/workflows/test.yml"
+    }
+  ],
+  "rootSymlinks": [
+    {
+      "link": "AGENTS.md",
+      "target": "CLAUDE.md"
+    },
+    {
+      "link": "Directory.Build.targets",
+      "target": "unity-coding-standards/config/Directory.Build.targets"
+    }
+  ],
+  "knowledgeSubmodule": {
+    "path": "Knowledge/conventions",
+    "url": "https://github.com/void2610/okf-conventions.git"
+  },
+  "deployTargets": [
+    {
+      "name": "GitHub Pages",
+      "files": [
+        {
+          "source": "workflows/build-github-pages.yml",
+          "target": ".github/workflows/build.yml"
+        }
+      ]
+    },
+    {
+      "name": "Netlify",
+      "files": [
+        {
+          "source": "workflows/main-deploy-netlify.yml",
+          "target": ".github/workflows/main-deploy.yml"
+        },
+        {
+          "source": "workflows/pr-preview-netlify.yml",
+          "target": ".github/workflows/pr-preview.yml"
+        }
+      ]
+    },
+    {
+      "name": "Cloudflare Pages",
+      "files": [
+        {
+          "source": "workflows/build-cloudflare.yml",
+          "target": ".github/workflows/build.yml"
+        },
+        {
+          "source": "workflows/pr-preview-cloudflare.yml",
+          "target": ".github/workflows/pr-preview.yml"
+        }
+      ]
+    },
+    {
+      "name": "Steam",
+      "files": [
+        {
+          "source": "workflows/steam-deploy.yml",
+          "target": ".github/workflows/steam-deploy.yml"
+        }
+      ]
+    }
+  ],
+  "gitignoreRules": [
+    "",
+    "# NuGetForUnity の復元先 (Unity 起動時に再生成される)",
+    "/Assets/Packages",
+    "/Assets/Packages.meta",
+    "",
+    "# uLoopMCP CLI のツールキャッシュ / 出力 (ローカル生成物)",
+    "/.uloop/",
+    "outputs/",
+    "/CIBuilds/WebGL/build",
+    "/Screenshots",
+    "",
+    "# JetBrains Rider",
+    ".idea/",
+    "",
+    "# unity-coding-standards が配布する dotnet format 用プロジェクト (symlink) は追跡する",
+    "!FormatCheck.csproj"
+  ]
 }
