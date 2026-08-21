@@ -150,7 +150,7 @@ namespace Void2610.UnityTemplate.Editor
                 _upmMissingCount == 0 ? "UPM: すべて導入済み" : $"UPM: 未導入 {_upmMissingCount} 件",
                 _upmMissingCount == 0,
                 "インストール",
-                () => TemplateMenuItems.InstallDependencies());
+                () => SetupActions.InstallDependencies());
 
             string nugetLabel;
             if (!_nugetAvailable)
@@ -164,7 +164,7 @@ namespace Void2610.UnityTemplate.Editor
                 nugetLabel,
                 _nugetAvailable && _nugetMissingCount == 0,
                 "インストール",
-                () => TemplateMenuItems.InstallNugetPackages(),
+                () => SetupActions.InstallNugetPackages(),
                 enabled: _nugetAvailable);
         }
 
@@ -198,7 +198,7 @@ namespace Void2610.UnityTemplate.Editor
         {
             DrawSectionTitle("フォルダ / ファイル");
 
-            DrawStatusRow("フォルダ構成", null, "作成", () => TemplateMenuItems.CreateFolderStructure());
+            DrawStatusRow("フォルダ構成", null, "作成", () => SetupActions.CreateFolderStructure());
 
             var allConfigDone = _configFileStatus.All(f => f.done);
             var missing = _configFileStatus.Where(f => !f.done).Select(f => f.label).ToList();
@@ -206,15 +206,15 @@ namespace Void2610.UnityTemplate.Editor
                 allConfigDone ? "設定ファイル: すべて配置済み" : $"設定ファイル: 未配置 {string.Join(", ", missing)}",
                 allConfigDone,
                 "コピー",
-                () => TemplateMenuItems.CopyConfigFiles());
+                () => SetupActions.CopyConfigFiles());
 
             DrawStatusRow(
                 "リポジトリスキャフォールド (Knowledge / .claude / CI)",
                 _scaffoldingDone,
                 "整備",
-                () => TemplateMenuItems.SetupRepoScaffolding());
+                () => SetupActions.SetupRepoScaffolding());
 
-            DrawStatusRow("ライセンスファイル (LicenseMaster)", null, "コピー", () => TemplateMenuItems.CopyLicenseFiles());
+            DrawStatusRow("ライセンスファイル (LicenseMaster)", null, "コピー", () => SetupActions.CopyLicenseFiles());
         }
 
         private void DrawDeploySection()

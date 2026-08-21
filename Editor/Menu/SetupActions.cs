@@ -5,20 +5,16 @@ using System.Linq;
 namespace Void2610.UnityTemplate.Editor
 {
     /// <summary>
-    /// Tools > Unity Template メニューのエントリポイント。処理は各サービスに委譲する
+    /// Setup Window から呼び出す対話的セットアップ操作。処理は各サービスに委譲する
     /// </summary>
-    public static class TemplateMenuItems
+    internal static class SetupActions
     {
-        private const string MENU_ROOT = "Tools/Unity Template/";
-
-        [MenuItem(MENU_ROOT + "Full Setup", false, 0)]
-        public static void FullSetup()
+        internal static void FullSetup()
         {
             FullSetupRunner.StartFullSetup();
         }
 
-        [MenuItem(MENU_ROOT + "Install UPM Packages")]
-        public static void InstallDependencies()
+        internal static void InstallDependencies()
         {
             if (UpmPackageInstaller.IsInstalling)
             {
@@ -56,8 +52,7 @@ namespace Void2610.UnityTemplate.Editor
             UpmPackageInstaller.StartInstallation(packagesToInstall);
         }
 
-        [MenuItem(MENU_ROOT + "Install NuGet Packages")]
-        public static void InstallNugetPackages()
+        internal static void InstallNugetPackages()
         {
             if (!NugetPackageService.IsNugetForUnityInstalled())
             {
@@ -143,8 +138,7 @@ namespace Void2610.UnityTemplate.Editor
             EditorUtility.DisplayDialog("インストール完了", resultMessage, "OK");
         }
 
-        [MenuItem(MENU_ROOT + "Create Folder Structure")]
-        public static void CreateFolderStructure()
+        internal static void CreateFolderStructure()
         {
             var config = TemplateConfig.Load();
             int createdCount = ProjectStructureService.CreateFolderStructure(config);
@@ -164,14 +158,12 @@ namespace Void2610.UnityTemplate.Editor
             }
         }
 
-        [MenuItem(MENU_ROOT + "Setup Utils Submodule")]
-        public static void SetupUtilsSubmodule()
+        internal static void SetupUtilsSubmodule()
         {
             SetupSubmoduleByLinkName("Utils");
         }
 
-        [MenuItem(MENU_ROOT + "Setup SettingsSystem Submodule")]
-        public static void SetupSettingsSystemSubmodule()
+        internal static void SetupSettingsSystemSubmodule()
         {
             SetupSubmoduleByLinkName("SettingsSystem");
         }
@@ -186,28 +178,24 @@ namespace Void2610.UnityTemplate.Editor
                 Debug.LogWarning($"{linkName} サブモジュールの設定が template-config.json に見つかりません");
         }
 
-        [MenuItem(MENU_ROOT + "Setup Analyzers Submodule")]
-        public static void SetupAnalyzersSubmodule()
+        internal static void SetupAnalyzersSubmodule()
         {
             var config = TemplateConfig.Load();
             SubmoduleService.SetupAnalyzersSubmodule(config.analyzers, interactive: true);
         }
 
-        [MenuItem(MENU_ROOT + "Setup Repo Scaffolding")]
-        public static void SetupRepoScaffolding()
+        internal static void SetupRepoScaffolding()
         {
             RepoScaffoldingService.Setup(TemplateConfig.Load());
             AssetDatabase.Refresh();
         }
 
-        [MenuItem(MENU_ROOT + "Copy Config Files")]
-        public static void CopyConfigFiles()
+        internal static void CopyConfigFiles()
         {
             ProjectStructureService.CopyConfigFilesInteractive();
         }
 
-        [MenuItem(MENU_ROOT + "Copy License Files")]
-        public static void CopyLicenseFiles()
+        internal static void CopyLicenseFiles()
         {
             var licenseMasterAssembly = System.AppDomain.CurrentDomain.GetAssemblies()
                 .FirstOrDefault(a => a.GetName().Name.Contains("LicenseMaster"));

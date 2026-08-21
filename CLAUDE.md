@@ -25,7 +25,8 @@ This is a Unity Package Manager (UPM) compatible template package for rapid Unit
 
 ```
 Editor/
-  Menu/            TemplateMenuItems.cs    — MenuItem エントリポイントのみ (処理は各サービスへ委譲)
+  Menu/            TemplateSetupWindow.cs  — 唯一のメニュー入口 (Tools > Unity Template > Setup Window)
+                   SetupActions.cs         — ウィンドウから呼ぶ対話的操作 (処理は各サービスへ委譲)
   Configuration/   TemplateConfigData.cs   — template-config.json のデータモデル群
                    TemplateConfig.cs       — config/manifest ロードとパッケージパス解決
   Setup/           SetupStep.cs            — ステップモデル (タイトル + 実行処理)
@@ -79,7 +80,7 @@ Editor/
 
 ### Installation Flow Architecture
 
-1. **Package Detection**: Uses `AssetDatabase.FindAssets("TemplateMenuItems t:Script")` to locate package root
+1. **Package Detection**: `TemplateConfig.GetPackagePath()` が template-config.json をアンカーにパッケージルートを解決
 2. **Dependency Resolution**: Compares template manifest against current project manifest, skipping already-installed packages
 3. **Sequential Installation**: Installs NuGetForUnity first (critical for R3), then other packages in queue
 4. **State Persistence**: Uses EditorPrefs to survive domain reloads during package installation
@@ -98,17 +99,7 @@ Editor/
 All functionality accessed via Unity Editor menus under `Tools > Unity Template`:
 
 ```
-Tools > Unity Template > Full Setup                    # 全ステップ一括実行 (推奨)
-Tools > Unity Template > Setup Window                  # セットアップ状況ダッシュボード (状態確認・個別実行・デプロイ選択)
-Tools > Unity Template > Install UPM Packages          # template-config.json の UPM パッケージ導入
-Tools > Unity Template > Install NuGet Packages        # NuGetForUnity 経由の NuGet DLL 導入
-Tools > Unity Template > Create Folder Structure       # 標準フォルダ構成の作成
-Tools > Unity Template > Setup Utils Submodule         # my-unity-utils submodule + symlink
-Tools > Unity Template > Setup SettingsSystem Submodule
-Tools > Unity Template > Setup Analyzers Submodule     # unity-coding-standards + アナライザービルド
-Tools > Unity Template > Setup Repo Scaffolding        # Knowledge / .claude / CI workflow / .gitignore
-Tools > Unity Template > Copy Config Files             # 設定ファイル配置 (上書き確認あり)
-Tools > Unity Template > Copy License Files            # LicenseMaster 用ライセンスアセット
+Tools > Unity Template > Setup Window   # 唯一のメニュー。状態確認・Full Setup・個別実行・デプロイ選択を全て担う
 ```
 
 **Recommended workflow:** `Full Setup` 一発。個別メニューは部分的な再実行用。
