@@ -1,0 +1,78 @@
+name: Test
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, develop]
+    paths:
+      - "Assets/Scripts/**/*.cs"
+      - "Assets/Plugins/**/*.cs"
+      - "Assets/Tests/**/*.cs"
+      # シナリオ (LiminalScenario) が依存するテストシーン / Prefab 変更でも CI を走らせる。
+      # PlayMode シナリオは Test_*.unity と Prefab に強く依存するため、
+      # スクリプト変更が無くてもこれらの変更で回帰検知できる必要がある。
+      - "Assets/Scenes/**"
+      - "Assets/Prefabs/**"
+      # Build Settings からテストシーンが外れる事故を CI で拾うため。
+      - "ProjectSettings/EditorBuildSettings.asset"
+      - "Packages/manifest.json"
+      - ".github/workflows/test.yml"
+      - ".gitmodules"
+      - "unity-coding-standards"
+  pull_request:
+    paths:
+      - "Assets/Scripts/**/*.cs"
+      - "Assets/Plugins/**/*.cs"
+      - "Assets/Tests/**/*.cs"
+      - "Assets/Scenes/**"
+      - "Assets/Prefabs/**"
+      - "ProjectSettings/EditorBuildSettings.asset"
+      - "Packages/manifest.json"
+      - ".github/workflows/test.yml"
+      - ".gitmodules"
+      - "unity-coding-standards"
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  test-editmode:
+    # フォーク経由の pull_request では self-hosted runner で任意コードが走らないようスキップ。
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    uses: void2610/unity-coding-standards/.github/workflows/unity-test-self-hosted.yml@main
+    with:
+      job-name: EditMode テスト
+      test-mode: EditMode
+      unity-version: "6000.3.10f1"
+      runner-labels: '["self-hosted", "macos", "apple-silicon"]'
+      artifact-name: test-results-editmode
+      pr-number: ${{ github.event.pull_request.number || 0 }}
+      # NuGet 復元は共通 submodule (my-unity-utils) の Editor メソッドを直接使用する。
+      nuget-restore-method: Void2610.UnityTemplate.Editor.CI.NuGetRestore.Restore
+      # LiminalPalette の UI Toolkit / EditorWindow テストが graphics device 初期化を必要とするため
+      # EditMode 側でも `-nographics` を外す。self-hosted ランナーには display があるので問題なく動く。
+      nographics: false
+      # テスト失敗で job も fail させ、warning に埋もれないようにする (PlayMode と揃える)。
+      fail-on-test-failures: true
+
+  test-playmode:
+    # PlayMode テストは LiminalScenario ベースの E2E を検証する。
+    # Edit Mode batch では Unity メインループが回らず不安定なため PlayMode ランナーに任せる。
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    uses: void2610/unity-coding-standards/.github/workflows/unity-test-self-hosted.yml@main
+    with:
+      job-name: PlayMode テスト
+      test-mode: PlayMode
+      unity-version: "6000.3.10f1"
+      runner-labels: '["self-hosted", "macos", "apple-silicon"]'
+      artifact-name: test-results-playmode
+      extra-artifact-path: outputs/ui-visual
+      pr-number: ${{ github.event.pull_request.number || 0 }}
+      nuget-restore-method: Void2610.UnityTemplate.Editor.CI.NuGetRestore.Restore
+      # LiminalPalette の UI Toolkit / EditorWindow テストは graphics device 初期化が要るため
+      # `-nographics` を外す。
+      nographics: false
+      # exit code 2 (テスト失敗) でジョブも失敗させ、warning 埋もれを防ぐ。
+      fail-on-test-failures: true

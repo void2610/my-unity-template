@@ -58,6 +58,34 @@ namespace Void2610.UnityTemplate.Editor
     }
 
     [System.Serializable]
+    public class RepoFileEntry
+    {
+        public string source = "";
+        public string target = "";
+    }
+
+    [System.Serializable]
+    public class RootSymlinkEntry
+    {
+        public string link = "";
+        public string target = "";
+    }
+
+    [System.Serializable]
+    public class KnowledgeSubmoduleConfig
+    {
+        public string path = "Knowledge/conventions";
+        public string url = "https://github.com/void2610/okf-conventions.git";
+    }
+
+    [System.Serializable]
+    public class DeployWorkflowsConfig
+    {
+        public RepoFileEntry[] githubPages = new RepoFileEntry[0];
+        public RepoFileEntry[] netlify = new RepoFileEntry[0];
+    }
+
+    [System.Serializable]
     public class TemplateConfigData
     {
         public string[] packages = new[]
@@ -119,6 +147,11 @@ namespace Void2610.UnityTemplate.Editor
             new NugetPackageEntry { id = "ZLogger", version = "2.5.10" }
         };
         public string licenseFolderPath = "Assets/LicenseMaster";
+        public RepoFileEntry[] repoFiles = new RepoFileEntry[0];
+        public RootSymlinkEntry[] rootSymlinks = new RootSymlinkEntry[0];
+        public KnowledgeSubmoduleConfig knowledgeSubmodule = new KnowledgeSubmoduleConfig();
+        public DeployWorkflowsConfig deployWorkflows = new DeployWorkflowsConfig();
+        public string[] gitignoreRules = new string[0];
     }
 
     /// <summary>
@@ -171,6 +204,7 @@ namespace Void2610.UnityTemplate.Editor
             {
                 stepDescriptions.Add($"{stepNum++}. Analyzers サブモジュールのセットアップ");
             }
+            stepDescriptions.Add($"{stepNum++}. リポジトリスキャフォールドの整備");
             int totalSteps = stepNum - 1;
 
             bool proceed = EditorUtility.DisplayDialog("Full Setup",
@@ -232,7 +266,7 @@ namespace Void2610.UnityTemplate.Editor
             var config = LoadTemplateConfig();
 
             // ステップ数を動的に計算
-            int totalSteps = 4 + config.submodules.Length; // フォルダ + UPM + NuGet + 設定ファイル + サブモジュール数
+            int totalSteps = 5 + config.submodules.Length; // フォルダ + UPM + NuGet + 設定ファイル + スキャフォールド + サブモジュール数
             if (!string.IsNullOrEmpty(config.analyzers.submoduleName))
                 totalSteps++;
 
@@ -325,6 +359,11 @@ namespace Void2610.UnityTemplate.Editor
                     SetupAnalyzersSubmoduleInternal(config.analyzers);
                 }
 
+                // リポジトリスキャフォールド (Analyzers 後: Directory.Build.targets の symlink 先が submodule 配下のため)
+                currentStep++;
+                Debug.Log($"[Full Setup {currentStep}/{totalSteps}] リポジトリスキャフォールドを整備中...");
+                SetupRepoScaffoldingInternal(config);
+
                 // 最終リフレッシュ
                 AssetDatabase.Refresh();
 
@@ -342,6 +381,7 @@ namespace Void2610.UnityTemplate.Editor
                 {
                     completionMessage += "✓ Analyzers サブモジュール\n";
                 }
+                completionMessage += "✓ リポジトリスキャフォールド\n";
                 completionMessage += "\n詳細はConsoleログを確認してください。";
 
                 Debug.Log("=== Full Setup が完了しました ===");
@@ -416,6 +456,163 @@ namespace Void2610.UnityTemplate.Editor
         {
             _isFullSetupRunning = false;
             EditorPrefs.DeleteKey(PREF_KEY_FULL_SETUP);
+        }
+
+        [MenuItem(MENU_ROOT + "Setup Repo Scaffolding")]
+        public static void SetupRepoScaffolding()
+        {
+            SetupRepoScaffoldingInternal(LoadTemplateConfig());
+            AssetDatabase.Refresh();
+        }
+
+        private static void SetupRepoScaffoldingInternal(TemplateConfigData config)
+        {
+            var projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+            var packagePath = GetPackagePath();
+            if (packagePath == null) return;
+            var templatesPath = Path.Combine(packagePath, "RepoTemplates~");
+
+            foreach (var entry in config.repoFiles)
+            {
+                CopyRepoFileIfAbsent(templatesPath, projectRoot, entry);
+            }
+
+            CreateKnowledgeLogIfAbsent(projectRoot);
+            SetupKnowledgeSubmodule(config.knowledgeSubmodule, projectRoot);
+
+            foreach (var entry in config.rootSymlinks)
+            {
+                EnsureRootSymlink(projectRoot, entry.link, entry.target);
+            }
+
+            AppendGitignoreRules(projectRoot, config.gitignoreRules);
+            SetupDeployWorkflows(config.deployWorkflows, templatesPath, projectRoot);
+            Debug.Log("✓ リポジトリスキャフォールドの整備が完了しました");
+        }
+
+        private static void CopyRepoFileIfAbsent(string templatesPath, string projectRoot, RepoFileEntry entry)
+        {
+            var destPath = Path.Combine(projectRoot, entry.target);
+            if (File.Exists(destPath))
+            {
+                Debug.Log($"  - スキップ (既存): {entry.target}");
+                return;
+            }
+
+            var sourcePath = Path.Combine(templatesPath, entry.source);
+            if (!File.Exists(sourcePath))
+            {
+                Debug.LogWarning($"  ⚠ テンプレートが見つかりません: {entry.source}");
+                return;
+            }
+
+            Directory.CreateDirectory(Path.GetDirectoryName(destPath));
+            File.Copy(sourcePath, destPath);
+            Debug.Log($"  ✓ 作成しました: {entry.target}");
+        }
+
+        private static void CreateKnowledgeLogIfAbsent(string projectRoot)
+        {
+            var logPath = Path.Combine(projectRoot, "Knowledge", "log.md");
+            if (File.Exists(logPath)) return;
+
+            Directory.CreateDirectory(Path.GetDirectoryName(logPath));
+            var today = System.DateTime.Now.ToString("yyyy-MM-dd");
+            File.WriteAllText(logPath,
+                "# Update Log\n\n更新履歴を新しい順に記録する。日付は `YYYY-MM-DD`。\n\n" +
+                $"## {today}\n* **Add**: Knowledge ベースを初期化。\n");
+            Debug.Log("  ✓ 作成しました: Knowledge/log.md");
+        }
+
+        private static void SetupKnowledgeSubmodule(KnowledgeSubmoduleConfig knowledge, string projectRoot)
+        {
+            if (knowledge == null || string.IsNullOrEmpty(knowledge.url) || string.IsNullOrEmpty(knowledge.path))
+                return;
+
+            if (IsSubmoduleRegistered(knowledge.path))
+            {
+                Debug.Log($"  ✓ {knowledge.path} サブモジュールは既に登録されています");
+                ExecuteGitCommandSync(projectRoot, $"submodule update --init \"{knowledge.path}\"");
+                return;
+            }
+
+            if (Directory.Exists(Path.Combine(projectRoot, knowledge.path)))
+            {
+                Debug.LogWarning($"  ⚠ {knowledge.path} がサブモジュール定義なしで存在します。手動で確認してください。");
+                return;
+            }
+
+            var exitCode = ExecuteGitCommandSync(projectRoot, $"submodule add {knowledge.url} \"{knowledge.path}\"");
+            if (exitCode == 0)
+                Debug.Log($"  ✓ サブモジュールを追加しました: {knowledge.path}");
+            else
+                Debug.LogError($"  ✗ サブモジュールの追加に失敗しました: {knowledge.path}");
+        }
+
+        private static void EnsureRootSymlink(string projectRoot, string link, string target)
+        {
+            var linkPath = Path.Combine(projectRoot, link);
+            if (File.Exists(linkPath) || Directory.Exists(linkPath))
+            {
+                Debug.Log($"  - スキップ (既存): {link}");
+                return;
+            }
+
+            if (CreateSymlink(linkPath, target))
+                Debug.Log($"  ✓ symlink を作成しました: {link} -> {target}");
+            else
+                Debug.LogError($"  ✗ symlink の作成に失敗しました: {link}");
+        }
+
+        private static void AppendGitignoreRules(string projectRoot, string[] rules)
+        {
+            if (rules == null || rules.Length == 0) return;
+
+            // マーカー行の有無で冪等性を担保する
+            const string marker = "# --- my-unity-template scaffolding ---";
+            var gitignorePath = Path.Combine(projectRoot, ".gitignore");
+            var existing = File.Exists(gitignorePath) ? File.ReadAllText(gitignorePath) : "";
+            if (existing.Contains(marker))
+            {
+                Debug.Log("  - スキップ (追記済み): .gitignore");
+                return;
+            }
+
+            File.AppendAllText(gitignorePath, "\n" + marker + "\n" + string.Join("\n", rules) + "\n");
+            Debug.Log("  ✓ .gitignore にルールを追記しました");
+        }
+
+        private static void SetupDeployWorkflows(DeployWorkflowsConfig deploy, string templatesPath, string projectRoot)
+        {
+            if (deploy == null) return;
+            var hasAny = (deploy.githubPages != null && deploy.githubPages.Length > 0) ||
+                         (deploy.netlify != null && deploy.netlify.Length > 0);
+            if (!hasAny) return;
+
+            var alreadyPlaced = (deploy.githubPages ?? new RepoFileEntry[0])
+                .Concat(deploy.netlify ?? new RepoFileEntry[0])
+                .Any(e => File.Exists(Path.Combine(projectRoot, e.target)));
+            if (alreadyPlaced)
+            {
+                Debug.Log("  - スキップ (既存): デプロイ workflow");
+                return;
+            }
+
+            var choice = EditorUtility.DisplayDialogComplex("デプロイ workflow",
+                "WebGL ビルドのデプロイ先 workflow を配置しますか？",
+                "GitHub Pages", "配置しない", "Netlify");
+
+            var entries = choice switch
+            {
+                0 => deploy.githubPages,
+                2 => deploy.netlify,
+                _ => new RepoFileEntry[0],
+            };
+
+            foreach (var entry in entries)
+            {
+                CopyRepoFileIfAbsent(templatesPath, projectRoot, entry);
+            }
         }
 
         [MenuItem(MENU_ROOT + "Install UPM Packages")]
