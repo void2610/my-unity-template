@@ -43,14 +43,14 @@ namespace Void2610.UnityTemplate.Editor
         }
 
         /// <summary>
-        /// 設定ファイルを ConfigTemplates から強制コピーする (Full Setup 用・確認なし)
+        /// 設定ファイルを Templates/Config から強制コピーする (Full Setup 用・確認なし)
         /// </summary>
         internal static void CopyConfigFilesOverwrite(TemplateConfigData config)
         {
             var packagePath = TemplateConfig.GetPackagePath();
             if (packagePath == null) return;
 
-            var configTemplatesPath = Path.Combine(packagePath, "ConfigTemplates");
+            var configTemplatesPath = Path.Combine(packagePath, "Templates", "Config");
             var projectRoot = TemplateConfig.GetProjectRoot();
 
             int configCopied = 0;
@@ -84,7 +84,7 @@ namespace Void2610.UnityTemplate.Editor
             if (packagePath == null) return;
             var config = TemplateConfig.Load();
 
-            var configTemplatesPath = Path.Combine(packagePath, "ConfigTemplates");
+            var configTemplatesPath = Path.Combine(packagePath, "Templates", "Config");
             var projectRoot = TemplateConfig.GetProjectRoot();
 
             var copiedCount = 0;
@@ -176,7 +176,7 @@ namespace Void2610.UnityTemplate.Editor
             var packagePath = TemplateConfig.GetPackagePath();
             if (packagePath == null) return 0;
 
-            var licenseTemplatesPath = Path.Combine(packagePath, "LicenseTemplates");
+            var licenseTemplatesPath = Path.Combine(packagePath, "Templates", "License");
 
             var targetPath = licenseFolderPath;
             if (!AssetDatabase.IsValidFolder(targetPath))

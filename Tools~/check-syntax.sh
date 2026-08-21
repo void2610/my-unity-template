@@ -8,7 +8,7 @@ cd "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 
-cp Editor/*.cs "$tmp"/
+find Editor -name '*.cs' -exec cp {} "$tmp"/ ';'
 cat > "$tmp/check.csproj" <<'EOF'
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
