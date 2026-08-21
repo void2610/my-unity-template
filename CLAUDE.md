@@ -99,6 +99,7 @@ All functionality accessed via Unity Editor menus under `Tools > Unity Template`
 
 ```
 Tools > Unity Template > Full Setup                    # 全ステップ一括実行 (推奨)
+Tools > Unity Template > Setup Window                  # セットアップ状況ダッシュボード (状態確認・個別実行・デプロイ選択)
 Tools > Unity Template > Install UPM Packages          # template-config.json の UPM パッケージ導入
 Tools > Unity Template > Install NuGet Packages        # NuGetForUnity 経由の NuGet DLL 導入
 Tools > Unity Template > Create Folder Structure       # 標準フォルダ構成の作成

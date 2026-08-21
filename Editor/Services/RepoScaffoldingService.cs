@@ -139,7 +139,7 @@ namespace Void2610.UnityTemplate.Editor
             {
                 if (target.files == null || target.files.Length == 0) continue;
 
-                if (target.files.Any(e => File.Exists(Path.Combine(projectRoot, e.target))))
+                if (IsDeployTargetPlaced(target, projectRoot))
                 {
                     Debug.Log($"  - スキップ (既存): {target.name} workflow");
                     continue;
@@ -149,11 +149,28 @@ namespace Void2610.UnityTemplate.Editor
                         $"{target.name} のデプロイ workflow を配置しますか？", "配置する", "スキップ"))
                     continue;
 
-                foreach (var entry in target.files)
-                {
-                    CopyRepoFileIfAbsent(templatesPath, projectRoot, entry);
-                }
+                PlaceDeployTarget(target, templatesPath, projectRoot);
             }
+        }
+
+        internal static bool IsDeployTargetPlaced(DeployTargetConfig target, string projectRoot)
+        {
+            return target.files != null &&
+                   target.files.Any(e => File.Exists(Path.Combine(projectRoot, e.target)));
+        }
+
+        internal static void PlaceDeployTarget(DeployTargetConfig target, string templatesPath, string projectRoot)
+        {
+            foreach (var entry in target.files)
+            {
+                CopyRepoFileIfAbsent(templatesPath, projectRoot, entry);
+            }
+        }
+
+        internal static string GetRepoTemplatesPath()
+        {
+            var packagePath = TemplateConfig.GetPackagePath();
+            return packagePath == null ? null : Path.Combine(packagePath, Path.Combine("Templates", "Repo~"));
         }
     }
 }
