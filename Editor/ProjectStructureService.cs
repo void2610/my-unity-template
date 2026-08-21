@@ -81,6 +81,7 @@ namespace Void2610.UnityTemplate.Editor
         internal static void CopyConfigFilesInteractive()
         {
             var packagePath = TemplateConfig.GetPackagePath();
+            if (packagePath == null) return;
             var config = TemplateConfig.Load();
 
             var configTemplatesPath = Path.Combine(packagePath, "ConfigTemplates");
