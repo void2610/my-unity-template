@@ -191,6 +191,6 @@ MIT License
 - Knowledge ベースのスキャフォールド (`index.md` / `log.md` / `design/` / `systems/`) と `Knowledge/conventions` (okf-conventions) submodule の追加
 - ルート symlink (`AGENTS.md` → CLAUDE.md、`Directory.Build.targets` → unity-coding-standards/config)
 - `.gitignore` への共通ルール追記 (マーカー行で冪等)
-- デプロイ workflow の選択配置 (GitHub Pages / Netlify / なし)
+- デプロイ workflow の選択配置 (GitHub Pages / Netlify / Cloudflare Pages / Steam をターゲットごとに Yes/No 確認。`__PROJECT_NAME__` はリポジトリ名に置換される)
 
-テンプレートの実体は `Editor/RepoTemplates~/` にあり、対象一覧は `template-config.json` の `repoFiles` / `rootSymlinks` / `knowledgeSubmodule` / `deployWorkflows` / `gitignoreRules` で管理する。
+テンプレートの実体は `Editor/RepoTemplates~/` にあり、対象一覧は `template-config.json` の `repoFiles` / `rootSymlinks` / `knowledgeSubmodule` / `deployTargets` / `gitignoreRules` で管理する。

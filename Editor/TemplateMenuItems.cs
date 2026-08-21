@@ -79,10 +79,10 @@ namespace Void2610.UnityTemplate.Editor
     }
 
     [System.Serializable]
-    public class DeployWorkflowsConfig
+    public class DeployTargetConfig
     {
-        public RepoFileEntry[] githubPages = new RepoFileEntry[0];
-        public RepoFileEntry[] netlify = new RepoFileEntry[0];
+        public string name = "";
+        public RepoFileEntry[] files = new RepoFileEntry[0];
     }
 
     [System.Serializable]
@@ -150,7 +150,7 @@ namespace Void2610.UnityTemplate.Editor
         public RepoFileEntry[] repoFiles = new RepoFileEntry[0];
         public RootSymlinkEntry[] rootSymlinks = new RootSymlinkEntry[0];
         public KnowledgeSubmoduleConfig knowledgeSubmodule = new KnowledgeSubmoduleConfig();
-        public DeployWorkflowsConfig deployWorkflows = new DeployWorkflowsConfig();
+        public DeployTargetConfig[] deployTargets = new DeployTargetConfig[0];
         public string[] gitignoreRules = new string[0];
     }
 
@@ -486,7 +486,7 @@ namespace Void2610.UnityTemplate.Editor
             }
 
             AppendGitignoreRules(projectRoot, config.gitignoreRules);
-            SetupDeployWorkflows(config.deployWorkflows, templatesPath, projectRoot);
+            SetupDeployWorkflows(config.deployTargets, templatesPath, projectRoot);
             Debug.Log("✓ リポジトリスキャフォールドの整備が完了しました");
         }
 
@@ -507,7 +507,10 @@ namespace Void2610.UnityTemplate.Editor
             }
 
             Directory.CreateDirectory(Path.GetDirectoryName(destPath));
-            File.Copy(sourcePath, destPath);
+            var content = File.ReadAllText(sourcePath);
+            // Cloudflare のプロジェクト名や Steam のビルド名等をリポジトリ名で埋める
+            content = content.Replace("__PROJECT_NAME__", Path.GetFileName(projectRoot));
+            File.WriteAllText(destPath, content);
             Debug.Log($"  ✓ 作成しました: {entry.target}");
         }
 
@@ -604,36 +607,29 @@ namespace Void2610.UnityTemplate.Editor
             Debug.Log("  ✓ .gitignore にルールを追記しました");
         }
 
-        private static void SetupDeployWorkflows(DeployWorkflowsConfig deploy, string templatesPath, string projectRoot)
+        private static void SetupDeployWorkflows(DeployTargetConfig[] targets, string templatesPath, string projectRoot)
         {
-            if (deploy == null) return;
-            var hasAny = (deploy.githubPages != null && deploy.githubPages.Length > 0) ||
-                         (deploy.netlify != null && deploy.netlify.Length > 0);
-            if (!hasAny) return;
+            if (targets == null) return;
 
-            var alreadyPlaced = (deploy.githubPages ?? new RepoFileEntry[0])
-                .Concat(deploy.netlify ?? new RepoFileEntry[0])
-                .Any(e => File.Exists(Path.Combine(projectRoot, e.target)));
-            if (alreadyPlaced)
+            // Web デプロイ先と Steam は排他でないため、ターゲットごとに個別確認する
+            foreach (var target in targets)
             {
-                Debug.Log("  - スキップ (既存): デプロイ workflow");
-                return;
-            }
+                if (target.files == null || target.files.Length == 0) continue;
 
-            var choice = EditorUtility.DisplayDialogComplex("デプロイ workflow",
-                "WebGL ビルドのデプロイ先 workflow を配置しますか？",
-                "GitHub Pages", "配置しない", "Netlify");
+                if (target.files.Any(e => File.Exists(Path.Combine(projectRoot, e.target))))
+                {
+                    Debug.Log($"  - スキップ (既存): {target.name} workflow");
+                    continue;
+                }
 
-            var entries = choice switch
-            {
-                0 => deploy.githubPages,
-                2 => deploy.netlify,
-                _ => new RepoFileEntry[0],
-            };
+                if (!EditorUtility.DisplayDialog("デプロイ workflow",
+                        $"{target.name} のデプロイ workflow を配置しますか？", "配置する", "スキップ"))
+                    continue;
 
-            foreach (var entry in entries)
-            {
-                CopyRepoFileIfAbsent(templatesPath, projectRoot, entry);
+                foreach (var entry in target.files)
+                {
+                    CopyRepoFileIfAbsent(templatesPath, projectRoot, entry);
+                }
             }
         }
 

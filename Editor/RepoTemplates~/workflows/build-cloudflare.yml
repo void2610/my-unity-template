@@ -1,0 +1,18 @@
+name: WebGL Build (Cloudflare Pages)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    uses: void2610/unity-coding-standards/.github/workflows/webgl-build-self-hosted.yml@main
+    with:
+      unity-version: "6000.3.10f1"
+      execute-method: Void2610.UnityTemplate.Editor.CI.CiBuild.BuildWebGL
+      runner-labels: '["self-hosted", "macos", "apple-silicon"]'
+      nuget-restore-method: Void2610.UnityTemplate.Editor.CI.NuGetRestore.Restore
+      cloudflare-project-name: __PROJECT_NAME__
+      deploy-branch: main
+    secrets:
+      SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
+      DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
