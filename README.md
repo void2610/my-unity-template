@@ -193,4 +193,4 @@ MIT License
 - `.gitignore` への共通ルール追記 (マーカー行で冪等)
 - デプロイ workflow の選択配置 (GitHub Pages / Netlify / Cloudflare Pages / Steam をターゲットごとに Yes/No 確認。`__PROJECT_NAME__` はリポジトリ名に置換される)
 
-テンプレートの実体は `Editor/RepoTemplates~/` にあり、対象一覧は `template-config.json` の `repoFiles` / `rootSymlinks` / `knowledgeSubmodule` / `deployTargets` / `gitignoreRules` で管理する。
+テンプレートの実体は `Editor/Templates/Repo~/` にあり、対象一覧は `template-config.json` の `repoFiles` / `rootSymlinks` / `knowledgeSubmodule` / `deployTargets` / `gitignoreRules` で管理する。

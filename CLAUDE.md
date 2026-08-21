@@ -21,19 +21,30 @@ This is a Unity Package Manager (UPM) compatible template package for rapid Unit
 
 ### Key Components
 
-**TemplateMenuItems.cs** (`Editor/TemplateMenuItems.cs`)
-- Main entry point for all package functionality (970+ lines)
-- Implements automated dependency installation with domain reload resilience
-- **New:** Git Submodule setup with symbolic link creation (Windows/macOS/Linux compatible)
-- Uses AssetDatabase for file access (not Resources folder to avoid build inclusion)
-- Handles Unity 6 compatibility by automatically skipping incompatible packages
-- Namespace: `Void2610.UnityTemplate.Editor`
-- Classes: `TemplateManifestData`, `ManifestData`, `InstallationState`, `TemplateConfigData`, `SubmoduleConfig`, `AnalyzersConfig`, `ConfigFileEntry`, `TemplateMenuItems`
-- Key Methods:
-  - `InstallDependencies()`: Package installation
-  - `SetupUtilsSubmodule()`: **New** - Automated submodule + symlink setup
-  - `CreateSymlink()`: **New** - Cross-platform symlink creation
-  - `ExecuteGitCommandSync()`: **New** - Git command execution helper
+**Editor コード構成** (namespace: `Void2610.UnityTemplate.Editor`)
+
+```
+Editor/
+  Menu/            TemplateMenuItems.cs    — MenuItem エントリポイントのみ (処理は各サービスへ委譲)
+  Configuration/   TemplateConfigData.cs   — template-config.json のデータモデル群
+                   TemplateConfig.cs       — config/manifest ロードとパッケージパス解決
+  Setup/           SetupStep.cs            — ステップモデル (タイトル + 実行処理)
+                   FullSetupSteps.cs       — ステップカタログ (実行順序と内容の定義)
+                   FullSetupRunner.cs      — 実行機構 (ダイアログ・進捗・ドメインリロード復元)
+  Services/        UpmPackageInstaller.cs  — UPM キュー管理 (ドメインリロード耐性)
+                   NugetPackageService.cs  — NuGetForUnity 連携 (Reflection 呼び出しを隔離)
+                   SubmoduleService.cs     — submodule 追加・symlink 連携・アナライザービルド
+                   ProjectStructureService.cs — フォルダ構成・設定/ライセンスファイル配置
+                   RepoScaffoldingService.cs  — Knowledge / .claude / CI workflow / .gitignore 整備
+  Infrastructure/  ProcessUtility.cs       — シェル / git の同期実行 (非同期出力読み取り)
+                   SymlinkUtility.cs       — symlink 作成 (Windows は Junction / file symlink を使い分け)
+  Templates/       Config/  — 設定ファイルテンプレート (旧 ConfigTemplates)
+                   License/ — LicenseMaster 用ライセンスアセット (旧 LicenseTemplates)
+                   Repo~/   — リポジトリスキャフォールド用テンプレート (Unity 非インポート)
+```
+
+- Full Setup は「同期プレステップ → UPM (非同期) → 同期ポストステップ」の 3 区間。ステップの追加・並び替えは `FullSetupSteps` のみ編集すればダイアログ・進捗・完了メッセージ全てに反映される
+- Unity 6 互換: 組み込み化されたパッケージ (`TextMeshPro`, `UGUI`) は `UpmPackageInstaller` が自動スキップ
 
 **template-config.json** (`Editor/template-config.json`)
 - Central configuration file for all template settings (editable by other developers)
@@ -62,7 +73,7 @@ This is a Unity Package Manager (UPM) compatible template package for rapid Unit
 - Integrated via Git Submodule at project root: `<project>/my-unity-utils/`
 - Linked to Unity via symlink: `Assets/Scripts/Utils/` → `../../my-unity-utils/`
 
-**LicenseTemplates** (`Editor/LicenseTemplates/`)
+**LicenseTemplates** (`Editor/Templates/License/`)
 - Pre-configured license assets for LicenseMaster integration
 - Covers all included third-party libraries (R3, UniTask, VContainer, etc.)
 
@@ -87,19 +98,19 @@ This is a Unity Package Manager (UPM) compatible template package for rapid Unit
 All functionality accessed via Unity Editor menus under `Tools > Unity Template`:
 
 ```
-Tools > Unity Template > Install Dependencies      # Install all packages from template-config.json
-Tools > Unity Template > Create Folder Structure   # Create standard project folders
-Tools > Unity Template > Setup Utils Submodule     # **NEW:** Add my-unity-utils submodule + create symlink
-Tools > Unity Template > Copy Utility Scripts      # (Legacy) Copy .cs.template files - deprecated in favor of submodule
-Tools > Unity Template > Copy Editor Scripts       # Copy editor-specific templates to Assets/Editor/
-Tools > Unity Template > Copy License Files        # Copy license assets for LicenseMaster
+Tools > Unity Template > Full Setup                    # 全ステップ一括実行 (推奨)
+Tools > Unity Template > Install UPM Packages          # template-config.json の UPM パッケージ導入
+Tools > Unity Template > Install NuGet Packages        # NuGetForUnity 経由の NuGet DLL 導入
+Tools > Unity Template > Create Folder Structure       # 標準フォルダ構成の作成
+Tools > Unity Template > Setup Utils Submodule         # my-unity-utils submodule + symlink
+Tools > Unity Template > Setup SettingsSystem Submodule
+Tools > Unity Template > Setup Analyzers Submodule     # unity-coding-standards + アナライザービルド
+Tools > Unity Template > Setup Repo Scaffolding        # Knowledge / .claude / CI workflow / .gitignore
+Tools > Unity Template > Copy Config Files             # 設定ファイル配置 (上書き確認あり)
+Tools > Unity Template > Copy License Files            # LicenseMaster 用ライセンスアセット
 ```
 
-**Recommended workflow:**
-1. Install Dependencies
-2. **Setup Utils Submodule** (instead of Copy Utility Scripts)
-3. Create Folder Structure (optional)
-4. Copy License Files (optional)
+**Recommended workflow:** `Full Setup` 一発。個別メニューは部分的な再実行用。
 
 ### Package Development Workflow
 ```bash
@@ -130,23 +141,21 @@ Interactive tutorials located in `Samples~/Tutorials/` demonstrate:
 AssetDatabase-based file location prevents build inclusion:
 
 ```csharp
-// Pattern used throughout TemplateMenuItems.cs:783
-var scriptFiles = AssetDatabase.FindAssets("TemplateMenuItems t:Script");
-var scriptPath = AssetDatabase.GUIDToAssetPath(scriptFiles[0]);
-var packagePath = Path.GetDirectoryName(scriptPath);
-var filePath = Path.Combine(packagePath, "filename");
+// TemplateConfig.GetPackagePath() — template-config.json をアンカーに Editor ルートを解決
+var packagePath = TemplateConfig.GetPackagePath();
+var filePath = Path.Combine(packagePath, "Templates", "Config", "filename");
 ```
 
 ### State Management During Installation
 Installation state persisted using EditorPrefs for domain reload survival:
-- Key: `UnityTemplate_InstallState`
+- Key: `UnityTemplate_InstallState` (UPM キュー) / `UnityTemplate_FullSetup` (Full Setup 進行フラグ)
 - Data: JSON serialized `InstallationState` class
-- Restoration: `[InitializeOnLoad]` static constructor in TemplateMenuItems:709
+- Restoration: `FullSetupRunner` の `[InitializeOnLoad]` static constructor → `UpmPackageInstaller.RestoreStateAfterReload()`
 
 ### Git Package Deduplication
 Advanced duplicate detection for Git packages using regex pattern matching:
 ```csharp
-// TemplateMenuItems.cs:497 - IsSameGitPackage method
+// UpmPackageInstaller.IsSameGitPackage
 // Extracts "owner/repo/path" format from Git URLs for comparison
 // Prevents duplicate installations of same package from different Git URLs
 ```
@@ -179,7 +188,7 @@ Utility scripts are managed in a separate Git repository (`my-unity-utils`) and 
     └─ manifest.json
 ```
 
-**Setup Process (TemplateMenuItems.cs:149-229):**
+**Setup Process (SubmoduleService.SetupSubmodule):**
 1. **Create Assets/Scripts folder** if it doesn't exist
 2. **Add Git Submodule:**
    ```bash
