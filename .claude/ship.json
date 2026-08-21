@@ -1,0 +1,1 @@
+{"test": "./Tools~/check-syntax.sh", "format": "python3 -m json.tool Editor/template-config.json > /dev/null && echo config-json-ok"}
