@@ -310,10 +310,16 @@ namespace Void2610.UnityTemplate.Editor
                         InstallNextPackage();
                     };
                 }
-                else if (FullSetupRunner.IsRunning)
+                else
                 {
+                    // Client.Add 起因のドメインリロードで完了処理ごと消えたケース。残骸のバーと状態を掃除する
+                    EditorUtility.ClearProgressBar();
                     ClearInstallationState();
-                    FullSetupRunner.ScheduleContinuationAfterUpm();
+                    Debug.Log("✓ UPMパッケージのインストールが完了しました (ドメインリロードを跨いで完了)");
+                    if (FullSetupRunner.IsRunning)
+                    {
+                        FullSetupRunner.ScheduleContinuationAfterUpm();
+                    }
                 }
             }
             catch (System.Exception e)
