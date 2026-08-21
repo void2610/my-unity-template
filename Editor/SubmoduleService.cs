@@ -262,19 +262,18 @@ namespace Void2610.UnityTemplate.Editor
             {
                 try
                 {
-                    var realPath = Path.GetFullPath(symlinkPath);
-                    var expectedPath = Path.GetFullPath(submodulePath);
-
-                    if (realPath.Equals(expectedPath, System.StringComparison.OrdinalIgnoreCase))
+                    // GetFullPath はリンク先を解決しないため、ReparsePoint (symlink/junction) ならセットアップ済みとみなす
+                    var attributes = File.GetAttributes(symlinkPath);
+                    if ((attributes & FileAttributes.ReparsePoint) != 0)
                     {
-                        Debug.Log($"✓ {linkName} symbolic link already exists and is correct");
+                        Debug.Log($"✓ {linkName} symbolic link already exists");
                         ShowSubmoduleSetupCompletedDialog(submoduleName, linkName);
                         return;
                     }
                 }
                 catch
                 {
-                    // リンク先の取得に失敗した場合は既存ファイル/ディレクトリとして扱う
+                    // 属性の取得に失敗した場合は既存ファイル/ディレクトリとして扱う
                 }
 
                 EditorUtility.DisplayDialog("警告",
