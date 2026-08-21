@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Unity 非依存の構文チェック: Editor/*.cs をスクラッチビルドし、Unity 参照欠如 (CS0246/CS0234) 以外のエラーを検出する
+# Editor/*.cs をスクラッチビルドし、Unity 参照欠如 (CS0246/CS0234) 以外のエラーを検出する
 
 set -euo pipefail
 
@@ -19,7 +19,7 @@ cat > "$tmp/check.csproj" <<'EOF'
 EOF
 
 output=$(cd "$tmp" && dotnet build 2>&1 || true)
-real_errors=$(echo "$output" | grep 'error CS' | grep -vE 'CS0246|CS0234|CS0103' || true)
+real_errors=$(echo "$output" | grep 'error CS' | grep -vE 'CS0246|CS0234' || true)
 
 if [ -n "$real_errors" ]; then
     echo "$real_errors" | sort -u
@@ -27,4 +27,4 @@ if [ -n "$real_errors" ]; then
     exit 1
 fi
 
-echo "OK: 構文エラーなし (Unity 参照欠如の CS0246/CS0234/CS0103 は除外)"
+echo "OK: 構文エラーなし (Unity 参照欠如の CS0246/CS0234 は除外)"
