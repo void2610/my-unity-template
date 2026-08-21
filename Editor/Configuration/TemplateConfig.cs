@@ -70,8 +70,21 @@ namespace Void2610.UnityTemplate.Editor
 
             try
             {
+                // JsonUtility は Dictionary を扱えず dependencies が常に空になるため、手動でパースする
+                var manifest = new ManifestData();
                 var manifestText = File.ReadAllText(manifestPath);
-                return JsonUtility.FromJson<ManifestData>(manifestText);
+                var depsMatch = System.Text.RegularExpressions.Regex.Match(
+                    manifestText, "\"dependencies\"\\s*:\\s*\\{([^}]*)\\}");
+                if (depsMatch.Success)
+                {
+                    var pairs = System.Text.RegularExpressions.Regex.Matches(
+                        depsMatch.Groups[1].Value, "\"([^\"]+)\"\\s*:\\s*\"([^\"]*)\"");
+                    foreach (System.Text.RegularExpressions.Match pair in pairs)
+                    {
+                        manifest.dependencies[pair.Groups[1].Value] = pair.Groups[2].Value;
+                    }
+                }
+                return manifest;
             }
             catch (System.Exception e)
             {
