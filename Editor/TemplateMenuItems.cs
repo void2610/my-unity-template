@@ -558,10 +558,32 @@ namespace Void2610.UnityTemplate.Editor
                 return;
             }
 
-            if (CreateSymlink(linkPath, target))
+            if (CreateRootSymlink(projectRoot, linkPath, target))
                 Debug.Log($"  ✓ symlink を作成しました: {link} -> {target}");
             else
-                Debug.LogError($"  ✗ symlink の作成に失敗しました: {link}");
+                Debug.LogError($"  ✗ symlink の作成に失敗しました: {link} (Windows はファイル symlink に Developer Mode か管理者権限が必要)");
+        }
+
+        private static bool CreateRootSymlink(string projectRoot, string linkPath, string target)
+        {
+            try
+            {
+#if UNITY_EDITOR_WIN
+                var targetFull = Path.GetFullPath(Path.Combine(projectRoot, target));
+                // Junction はディレクトリ専用かつ絶対パスが必要。ファイルは file symlink (相対 target はリンク位置基準で解決される)
+                var args = Directory.Exists(targetFull)
+                    ? $"/c mklink /J \"{linkPath}\" \"{targetFull}\""
+                    : $"/c mklink \"{linkPath}\" \"{target}\"";
+                return ExecuteShellCommand("cmd.exe", args) == 0;
+#else
+                return ExecuteShellCommand("ln", $"-s \"{target}\" \"{linkPath}\"") == 0;
+#endif
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"Failed to create symlink: {e.Message}");
+                return false;
+            }
         }
 
         private static void AppendGitignoreRules(string projectRoot, string[] rules)
