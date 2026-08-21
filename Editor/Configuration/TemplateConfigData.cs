@@ -99,7 +99,7 @@ namespace Void2610.UnityTemplate.Editor
             "https://github.com/naichilab/unityroom-client-library.git?path=Assets/unityroom",
             "https://github.com/hadashiA/VContainer.git?path=VContainer/Assets/VContainer",
             "https://github.com/AnnulusGames/LitMotion.git?path=src/LitMotion/Assets/LitMotion",
-            "https://github.com/Yusuke57/UnityToolbarExtension.git",
+            "https://github.com/void2610/UnityToolbarExtension.git",
             "https://github.com/Cysharp/ZLogger.git?path=src/ZLogger.Unity/Assets/ZLogger.Unity",
             "https://github.com/Cysharp/CsprojModifier.git?path=src/CsprojModifier/Assets/CsprojModifier",
             "https://github.com/hatayama/uLoopMCP.git?path=/Packages/src"
