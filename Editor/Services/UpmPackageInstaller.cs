@@ -51,9 +51,9 @@ namespace Void2610.UnityTemplate.Editor
 
             foreach (var gitPackage in templateManifest.gitPackages)
             {
-                // 完全な git URL または同じパスを持つパッケージのみスキップする厳密な重複チェック
-                var isAlreadyInstalled = currentManifest.dependencies.Keys.Any(key =>
-                    key.Contains("github.com") && IsSameGitPackage(key, gitPackage));
+                // 完全な git URL または同じパスを持つパッケージのみスキップする厳密な重複チェック (URL は manifest の値側)
+                var isAlreadyInstalled = currentManifest.dependencies.Values.Any(value =>
+                    value.Contains("github.com") && IsSameGitPackage(value, gitPackage));
 
                 if (!isAlreadyInstalled)
                 {
@@ -88,7 +88,7 @@ namespace Void2610.UnityTemplate.Editor
 
             var repo = repoMatch.Groups[1].Value;
 
-            var pathMatch = Regex.Match(gitUrl, @"path=([^&]+)");
+            var pathMatch = Regex.Match(gitUrl, @"path=([^&#]+)");
             if (pathMatch.Success)
             {
                 var path = pathMatch.Groups[1].Value.TrimStart('/');
@@ -310,10 +310,16 @@ namespace Void2610.UnityTemplate.Editor
                         InstallNextPackage();
                     };
                 }
-                else if (FullSetupRunner.IsRunning)
+                else
                 {
+                    // Client.Add 起因のドメインリロードで完了処理ごと消えたケース。残骸のバーと状態を掃除する
+                    EditorUtility.ClearProgressBar();
                     ClearInstallationState();
-                    FullSetupRunner.ScheduleContinuationAfterUpm();
+                    Debug.Log("✓ UPMパッケージのインストールが完了しました (ドメインリロードを跨いで完了)");
+                    if (FullSetupRunner.IsRunning)
+                    {
+                        FullSetupRunner.ScheduleContinuationAfterUpm();
+                    }
                 }
             }
             catch (System.Exception e)
